@@ -7,9 +7,22 @@
     <title>Main</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="index.css">
+    <script>
+        var globals = {
+            param1: 'str',
+            isValid: false,
+            count: 5,
+            types: {
+                num: 'number',
+                str: 'string',
+                bool: 'boolean'
+            }
+        }
+    </script>
+    <script src="/App/index.js"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark" m-block="header">
         <div class="container">
             <a class="navbar-brand logo" href="/">MVC Frontend</a>
             <div>

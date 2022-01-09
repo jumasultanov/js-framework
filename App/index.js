@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async function() {
+document.addEventListener("DOMContentLoaded", async () => {
 
     /**
      * TODO:
@@ -7,10 +7,9 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     //Импортируем конфиг
     //let config = await import('./config.js');
-    //Дефолтные вспомогательные функции
-    //await import('./helpers.js');
+    
     //Запускаем приложение
-    (await import('./App.js')).default.init();
+    (await import('./App.js')).default.init(document.body);
 
     //---------------------------------------------
     //TODO: Запускаем формирование виртуального DOM
