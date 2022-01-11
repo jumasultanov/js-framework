@@ -1,7 +1,6 @@
 //DOM
 import DOM from './Services/DOM/DOM.js'
 import Block from './Services/DOM/Block.js'
-import VDOM from './Services/DOM/VDOM.js'
 //Reactive
 import Reactive from './Services/Reactive/Reactive.js'
 import Parser from './Services/Reactive/Parser.js'
@@ -19,5 +18,5 @@ class Service {
 }
 
 export {
-    Service, DOM, Block, VDOM, Reactive, Parser, Request, Log
+    Service, DOM, Block, Reactive, Parser, Request, Log
 }

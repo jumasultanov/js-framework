@@ -69,7 +69,7 @@ class Component {
 
     completeLoadControllers() {
         this.loadedController = true;
-        new Parser(this);
+        Parser.build(this.element);
     }
 
     /**
