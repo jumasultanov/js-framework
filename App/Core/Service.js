@@ -1,6 +1,7 @@
 import DOM from './Services/DOM/DOM.js'
 import Parser from './Services/Parser/Parser.js'
 import Request from './Services/Request/Request.js'
+import Log from './Services/Log/Log.js'
 
 class Service {
     
@@ -14,5 +15,6 @@ export {
     Service,
     DOM,
     Parser,
-    Request
+    Request,
+    Log
 }
