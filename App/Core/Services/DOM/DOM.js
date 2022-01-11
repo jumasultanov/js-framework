@@ -28,13 +28,13 @@ class DOM {
         const block = element.getAttribute('m-block') || null;
         if (block === null) return false;
         let name = block;
-        let controller = null;
+        let controllerNames = [];
         if (block.indexOf(':')>-1) {
             const div = block.split(':');
-            name = div[0];
-            controller = div[1];
+            name = div.shift();
+            controllerNames = div;
         }
-        return { name, controller }
+        return { name, controllerNames }
     }
 
 }

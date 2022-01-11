@@ -1,7 +1,12 @@
 class Controller {
 
-    //Объект компонента
-    component;
+    constructor() {
+        
+    }
+
+    static getInstance() {
+        return new this();
+    }
 
 }
 

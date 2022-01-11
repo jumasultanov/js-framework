@@ -1,6 +1,6 @@
 export let AppConfig = {
     //
-    controllerPath: 'App/Controller'
+    controllerPath: '/App/Controller'
 }
 
 export let ConnectConfig = {

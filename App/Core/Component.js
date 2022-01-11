@@ -1,4 +1,5 @@
-import { DOM } from './Service.js';
+import { DOM, Log } from './Service.js';
+import { AppConfig } from '../config.js';
 
 class Component {
 
@@ -6,11 +7,17 @@ class Component {
     static items = {};
     //Глобавльные переменные для всех компонентов
     static data = {};
+    //static
+    static controllerPath = '';
 
     children = {};
+    loadedControllers = false;
+    controllerNames = [];
+    controllers = [];
 
     constructor(data) {
         Object.assign(this, data);
+        this.loadControllers();
     }
 
     /**
@@ -19,6 +26,45 @@ class Component {
      */
     appendChild(component) {
         this.children[component.name] = component;
+    }
+
+    /**
+     * Загрузка контроллеров
+     */
+    loadControllers() {
+        if (!this.controllerNames.length) {
+            this.loadedController = true;
+            return;
+        }
+        this.controllerNames.forEach(controllerName => this.loadController(controllerName));
+    }
+
+    /**
+     * Загрузка контроллера
+     * @param {string} controllerName Название контроллера
+     */
+    loadController(controllerName) {
+        let path = `${AppConfig.controllerPath}/${controllerName}.js`;
+        import(path)
+            .then(module => {
+                this.addController(module.default.getInstance(this));
+            })
+            .catch(err => {
+                Log.send(
+                    [`Cannot load: ${controllerName}`, `URI: ${path}`, err.message],
+                    Log.TYPE_ERROR,
+                    'Import controller'
+                );
+            });
+    }
+
+    /**
+     * Добавление контроллера
+     * @param {Controller} controller 
+     */
+    addController(controller) {
+        this.controllers.push(controller);
+        if (this.controllerNames.length == this.controllers.length) this.loadedControllers = true;
     }
 
     /**
