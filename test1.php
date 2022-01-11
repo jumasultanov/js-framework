@@ -1,20 +1,6 @@
 <? require('layout/header.php'); ?>
     <main role="main" m-block="content:TestController">
         <div class="container">
-            <div class="row" m-block="row-1">
-                <div class="col" m-block="inner-block-1">
-                    <span m-block="test-block"></span>
-                </div>
-                <div class="col" m-block="inner-block-2">
-                    <span m-block="test-block-2-1"></span>
-                    <span m-block="test-block-2-2"></span>
-                </div>
-                <div class="col" m-block="inner-block-3">
-                    <span m-block="test-block-3-1"></span>
-                    <span m-block="test-block-3-2"></span>
-                    <span m-block="test-block-3-3"></span>
-                </div>
-            </div>
             <div class="row">
                 <div class="col-8">
                     <div class="mb-5" m-block="description">
@@ -23,8 +9,8 @@
                 </div>
                 <div class="col-3 offset-1" m-block="author">
                     <div class="mb-5">
-                        <div><span>Author:</span> <b>Mick</b></div>
-                        <div><span>Label:</span> <b>Programmer</b></div>
+                        <div><span>Author:</span> <b>{{ author }}</b></div>
+                        <div><span>Label:</span> <b>{{ prof }}</b></div>
                     </div>
                     <div class="mb-5" m-block="works">
                         <ul>

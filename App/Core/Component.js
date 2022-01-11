@@ -1,4 +1,4 @@
-import { DOM, Log } from './Service.js';
+import { Block, Log, Parser } from './Service.js';
 import { AppConfig } from '../config.js';
 
 class Component {
@@ -33,7 +33,7 @@ class Component {
      */
     loadControllers() {
         if (!this.controllerNames.length) {
-            this.loadedController = true;
+            this.completeLoadControllers();
             return;
         }
         this.controllerNames.forEach(controllerName => this.loadController(controllerName));
@@ -64,7 +64,12 @@ class Component {
      */
     addController(controller) {
         this.controllers.push(controller);
-        if (this.controllerNames.length == this.controllers.length) this.loadedControllers = true;
+        if (this.controllerNames.length == this.controllers.length) this.completeLoadControllers();
+    }
+
+    completeLoadControllers() {
+        this.loadedController = true;
+        new Parser(this);
     }
 
     /**
@@ -111,7 +116,7 @@ class Component {
      */
     static updateTreeComponents(parentElement) {
         let prev = null, levels = [], level = -1;
-        DOM.getBlocks(parentElement).forEach(obj => {
+        Block.getAll(parentElement).forEach(obj => {
             const item = new this(obj);
             //Если есть родительский блок
             if (item.parent) {
