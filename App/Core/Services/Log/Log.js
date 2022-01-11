@@ -14,7 +14,7 @@ class Log {
     driver;
 
     /**
-     * @param {string|string[]} message Сообщение
+     * @param {any|any[]} message Сообщение
      * @param {number} type Тип
      * @param {string} group Группа/категория
      * @param {number} driver Место вывода
@@ -52,7 +52,7 @@ class Log {
             default: method = 'log';
         }
         if (this.group) console.group(this.group);
-        console[method].apply(null, data);
+        data.forEach(message => console[method](message));
         if (this.group) console.groupEnd();
         return true;
     }
