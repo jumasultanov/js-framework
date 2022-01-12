@@ -1,22 +1,17 @@
-//DOM
-import DOM from './Services/DOM/DOM.js'
-import Block from './Services/DOM/Block.js'
+export { default as DOM } from './Services/DOM/DOM.js'
+export { default as Block } from './Services/DOM/Block.js'
 //Reactive
-import Reactive from './Services/Reactive/Reactive.js'
-import Parser from './Services/Reactive/Parser.js'
+export { default as Reactive } from './Services/Reactive/Reactive.js'
+export { default as Parser } from './Services/Reactive/Parser.js'
 //Request
-import Request from './Services/Request/Request.js'
+export { default as Request } from './Services/Request/Request.js'
 //Log
-import Log from './Services/Log/Log.js'
+export { default as Log } from './Services/Log/Log.js'
 
-class Service {
+export class Service {
     
     static load(moduleName) {
         // TODO: загрузка модуля
     }
 
-}
-
-export {
-    Service, DOM, Block, Reactive, Parser, Request, Log
 }
