@@ -24,10 +24,11 @@ class Parser {
 
     /**
      * Старт парсинга
+     * @returns {Parser}
      */
     build() {
         this.walk(this.node);
-        console.log(this.vdom);
+        return this;
     }
 
     /**

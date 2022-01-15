@@ -6,6 +6,7 @@
                     <div class="mb-5" m-block="description:TestController">
                         <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <p m-if="previewText">Start preview text: {{ previewText }}</p>
+                        <p m-else>Preview text not found</p>
                     </div>
                 </div>
                 <div class="col-3 offset-1" m-block="author">
@@ -15,7 +16,7 @@
                     </div>
                     <div class="mb-5" m-block="works">
                         <ul>
-                            <li m-for="work in works">
+                            <li for="work in works">
                                 <span>name: {{ work.name }}</span><br>
                                 <span>type: {{ work.type }}</span>
                             </li>

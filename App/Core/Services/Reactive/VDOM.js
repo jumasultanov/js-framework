@@ -11,9 +11,9 @@ class VDOM {
     }
 
     /**
-     * Включаем реактивность
+     * Запуск реактивности
      */
-    enableReactive(area) {
+    enableReactive() {
         /**
          * TODO:
          *      + данные реактивны
@@ -22,24 +22,37 @@ class VDOM {
          */
         /*console.log(area);
         console.log(this.items);
-        VNode.setArea(area);
+        VNode.setArea(area);*/
         this.directives(this.items);
-        this.update();*/
+        this.update(this.items);
     }
 
+    /**
+     * Запуск выражении VNode
+     * @param {VNode[]} children 
+     */
     directives(children) {
-        /*if (!children.length) return;
+        if (!children.length) return;
         children.forEach(child => {
             let vnode = child.setDirectives();
             if (vnode) {
                 if (vnode.isListItem) console.log(vnode);
                 this.directives(vnode.children);
             }
-        });*/
+        });
     }
 
-    update() {
-
+    /**
+     * Обновление DOM
+     */
+    update(children) {
+        if (!children.length) return;
+        children.forEach(child => {
+            let vnode = child.update();
+            if (vnode) {
+                this.update(vnode.children);
+            }
+        });
     }
 
 }

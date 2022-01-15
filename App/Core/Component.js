@@ -14,6 +14,7 @@ class Component {
     loadedControllers = false;
     controllerNames = [];
     controllers = [];
+    vdom;
 
     constructor(data) {
         Object.assign(this, data);
@@ -69,7 +70,11 @@ class Component {
 
     completeLoadControllers() {
         this.loadedController = true;
-        Parser.build(this.element);
+        this.vdom = Parser
+            .build(this.element) //Строим списки VNode
+            .getVDOM(); //Получаем списки
+        //Включаем реактивность и обновляем DOM
+        this.vdom.enableReactive();
     }
 
     /**
