@@ -1,6 +1,6 @@
 <? require('layout/header.php'); ?>
     <main role="main" m-block="content:TestController">
-        <div class="container" :data-page="pageName" @click="console.log('test click')">
+        <div class="container" :data-count="counter" @click="console.log('test click');count++;">
             <div class="row">
                 <div class="col-8">
                     <div class="mb-5" m-block="description:TestController">

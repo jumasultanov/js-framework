@@ -1,4 +1,5 @@
 import Directives from './Directives.js';
+import { NodeElement } from '../../Service.js';
 
 class VNode {
 
@@ -16,8 +17,8 @@ class VNode {
     children = [];
 
     constructor(node, data) {
-        this.node = node;
-        if (node.nodeType == 3) this.isText = true;
+        this.node = new NodeElement(node);
+        this.isText = this.node.isText();
         if (Object.keys(data.constr||{}).length) this.isConstr = true;
         if (data.listExtension) this.isListItem = true;
         this.data = data;
@@ -95,7 +96,7 @@ class VNode {
                 name: 'go',
                 type: 'player'
             },
-            pageName: 'alter',
+            counter: 0,
             previewText: 'preview'
         }
     }
@@ -128,9 +129,9 @@ class VNode {
     /**
      * Обновляем DOM для элемента
      */
-    update() {
+    /*update() {
 
-    }
+    }*/
 
     /**
      * 
@@ -149,6 +150,7 @@ class VNode {
         for (const name in this.data.attrs) {
             const data = this.data.attrs[name];
             Directives.expr(data.expr, this.getVars(), data);
+            if (data.changed) this.node.attr(name, data.current);
         }
     }
 

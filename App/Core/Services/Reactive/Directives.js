@@ -48,7 +48,7 @@ class Directives {
         // TODO: add modes for events
         // Сразу фиксируется функция события, 
         // не предполагает будущих изменении на другие функции
-        el[`on${name}`] = event => {
+        el.getNode()[`on${name}`] = event => {
             if (!val) val = "''";
             if (/^[a-z][\w\.]+$/i.test(val.trim())) {
                 return call(`${val}(event)`, Object.assign({ event }, ctx));

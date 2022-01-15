@@ -24,7 +24,7 @@ class VDOM {
         console.log(this.items);
         VNode.setArea(area);*/
         this.directives(this.items);
-        this.update(this.items);
+        //this.update(this.items);
     }
 
     /**
@@ -45,7 +45,7 @@ class VDOM {
     /**
      * Обновление DOM
      */
-    update(children) {
+    /*update(children) {
         if (!children.length) return;
         children.forEach(child => {
             let vnode = child.update();
@@ -53,7 +53,7 @@ class VDOM {
                 this.update(vnode.children);
             }
         });
-    }
+    }*/
 
 }
 
