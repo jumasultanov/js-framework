@@ -22,6 +22,10 @@ class NodeElement {
         return this.node.nodeType == Node.TEXT_NODE;
     }
 
+    text(text) {
+        this.node.textContent = text;
+    }
+
     attr(key, value) {
         this.node.setAttribute(key, value);
     }

@@ -1,13 +1,37 @@
 class VDOM {
 
+    //Список конструкции VNode
     items = [];
+    //Объект данных
+    vars;
 
     /**
      * Добавляем массив VNode в список
      * @param {VNode[]} vnodes 
      */
     add(vnodes) {
-        for (const vnode of vnodes) this.items.push(vnode);
+        for (const vnode of vnodes) {
+            this.items.push(vnode);
+            vnode.setVDOM(this);
+        }
+    }
+
+    /**
+     * Возвращает объект данных
+     * @returns {Proxy|null}
+     */
+    getVars() {
+        return this.vars;
+    }
+
+    /**
+     * Устанавливаем данные для конструкции
+     * @param {Proxy} vars 
+     * @returns {this}
+     */
+    setVars(vars) {
+        this.vars = vars;
+        return this;
     }
 
     /**
@@ -20,9 +44,6 @@ class VDOM {
          *      + виртуальный DOM готов
          *      - написать реактивное изменение элементов DOM
          */
-        /*console.log(area);
-        console.log(this.items);
-        VNode.setArea(area);*/
         this.directives(this.items);
         //this.update(this.items);
     }

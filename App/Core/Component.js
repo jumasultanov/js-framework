@@ -1,24 +1,46 @@
-import { Block, Log, Parser } from './Service.js';
+import BaseComponent from './BaseComponent.js';
+import Area from "./Area.js";
+import { Log, Parser } from './Service.js';
 import { AppConfig } from '../config.js';
 
-class Component {
+class Component extends BaseComponent {
 
-    //Все компоненты
-    static items = {};
-    //Глобавльные переменные для всех компонентов
-    static data = {};
-    //static
-    static controllerPath = '';
-
+    //Дочерние компоненты - название блока(ключ), Component(значение)
     children = {};
+    //Флаг готовности загрузки скриптов контроллеров
     loadedControllers = false;
+    //Список имен контроллеров из парсера
     controllerNames = [];
+    //Родительский блок {Node|null} из парсера
+    parent;
+    //Node элемент блока из парсера
+    element;
+    //Название компонента из парсера
+    name;
+    //Путь компонента
+    path = [];
+    //Загруженные контроллеры
     controllers = [];
+    //Объект DOM, в котором есть список конструкции для VNode
     vdom;
+    //Данные(переменные) блока
+    vars;
 
     constructor(data) {
+        super();
         Object.assign(this, data);
-        this.loadControllers();
+        //Парсим блок компонента
+        this.vdom = Parser
+            .build(this.element) //Строим списки VNode
+            .getVDOM(); //Получаем списки
+    }
+
+    /**
+     * Определяем область данных для компонента
+     */
+    defineArea() {
+        this.vars = Area.find(this.path);
+        return this;
     }
 
     /**
@@ -27,10 +49,21 @@ class Component {
      */
     appendChild(component) {
         this.children[component.name] = component;
+        component.updatePath(this.path);
+    }
+
+    /**
+     * Обновляем путь компонента
+     * @param {string[]} parentPath Родительский путь
+     */
+    updatePath(parentPath = []) {
+        this.path = [...parentPath];
+        this.path.push(this.name);
     }
 
     /**
      * Загрузка контроллеров
+     * @param {Function} Функция вызовется после загрузки всех контроллеров
      */
     loadControllers() {
         if (!this.controllerNames.length) {
@@ -68,99 +101,32 @@ class Component {
         if (this.controllerNames.length == this.controllers.length) this.completeLoadControllers();
     }
 
+    /**
+     * После загрузки всех контроллеров
+     */
     completeLoadControllers() {
         this.loadedController = true;
-        this.vdom = Parser
-            .build(this.element) //Строим списки VNode
-            .getVDOM(); //Получаем списки
+        //Определяем область данных
+        this.defineArea();
+        //Выполняем родительский метод завершения загрузок
+        if (Component.completeLoadControllers instanceof Function) {
+            Component.completeLoadControllers();
+        }
+    }
+
+    /**
+     * Активация компонента
+     */
+    enable() {
         //Включаем реактивность и обновляем DOM
-        this.vdom.enableReactive();
+        this.vdom.setVars(this.vars).enableReactive();
     }
 
     /**
-     * Инициализация модуля компонентов
-     * @returns {Component}
+     * Деактивация компонента
      */
-    static init() {
-        this.setGlobals();
-        return this;
-    }
-
-    /**
-     * Добавление данных из глобального объекта
-     */
-    static setGlobals() {
-        if (window.globals instanceof Object) this.data = window.globals;
-    }
-
-    static getComponent(path) {
+    disable() {
         // TODO: 
-    }
-
-    /**
-     * Обновление значения по пути
-     * @param {string} path Путь к значению объекта
-     * @param {string} value Значение
-     */
-    static setData(path, value) {
-        // TODO: key maybe as path to object 'keyParent2.keyParent1.key'
-    }
-
-    /**
-     * Обновление компонентов относительно HTML-блоков
-     * @param {Element} parentElement Элемент, откуда будут браться блоки
-     */
-    static update(parentElement) {
-        this.updateTreeComponents(parentElement);
-        console.log(this.items);
-    }
-
-    /**
-     * Обновление дерева компонентов из HTML-блоков
-     * @param {Element} parentElement Элемент, откуда будут браться блоки
-     */
-    static updateTreeComponents(parentElement) {
-        let prev = null, levels = [], level = -1;
-        Block.getAll(parentElement).forEach(obj => {
-            const item = new this(obj);
-            //Если есть родительский блок
-            if (item.parent) {
-                //Если родитель совпадает с предыдущим элементом, то это его дочерний элемент
-                if (item.parent == prev.element) {
-                    //Добавление к родителю
-                    prev.appendChild(item);
-                    //Добавляем уровень
-                    level++;
-                    levels.push(item);
-                } else {
-                    //Если родитель не совпадает с предыдущим родителем, то ищем родителя в более высоком уровне
-                    if (item.parent != prev.parent) {
-                        //Ищем родительский уровень
-                        level--;
-                        while (level >= 0) {
-                            if (levels[level].element == item.parent) break;
-                            level--;
-                        }
-                        //Убираем уровни ниже
-                        levels.splice(level + 1);
-                        //Добавление к родителю
-                        levels[level].appendChild(item);
-                        //Добавляем уровень
-                        level++;
-                        levels.push(item);
-                    } else {
-                        //Добавление к родителю соседа
-                        levels[level - 1].appendChild(item);
-                    }
-                }
-            } else {
-                //Если нет родительского блока
-                level = 0;
-                levels = [item];
-                this.items[item.name] = item;
-            }
-            prev = item;
-        })
     }
 
 }

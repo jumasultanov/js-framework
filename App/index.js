@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //let config = await import('./config.js');
     
     //Запускаем приложение
-    (await import('./App.js')).default.init(document.body);
+    (await import('./Core/App.js')).default.init(document.body);
 
     //---------------------------------------------
     //TODO: Запускаем формирование виртуального DOM

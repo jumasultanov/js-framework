@@ -1,4 +1,5 @@
 import Directives from './Directives.js';
+import VDOM from './VDOM.js';
 import { NodeElement } from '../../Service.js';
 
 class VNode {
@@ -15,6 +16,8 @@ class VNode {
     data;
     //Вложенные объекты VNode[]
     children = [];
+    //Объект VDOM, в котором содержится текущий экземпляр VNode
+    vdom;
 
     constructor(node, data) {
         this.node = new NodeElement(node);
@@ -22,6 +25,16 @@ class VNode {
         if (Object.keys(data.constr||{}).length) this.isConstr = true;
         if (data.listExtension) this.isListItem = true;
         this.data = data;
+    }
+
+    /**
+     * Устанавливается объект VDOM
+     * @param {VDOM} vdom 
+     * @returns {this}
+     */
+    setVDOM(vdom) {
+        this.vdom = vdom;
+        return this;
     }
 
     /**
@@ -88,17 +101,8 @@ class VNode {
      * @returns {object}
      */
     getVars() {
-        // TODO: 
-        return {
-            author: 'Mister',
-            prof: 'Master',
-            work: {
-                name: 'go',
-                type: 'player'
-            },
-            counter: 0,
-            previewText: 'preview'
-        }
+        if (this.vdom instanceof VDOM) return this.vdom.getVars();
+        else return null;
     }
 
     /**
@@ -106,7 +110,12 @@ class VNode {
      * @returns {VNode|null}
      */
     setDirectives() {
-        //console.log(this);
+        // TO CONTINUE: 
+        // Сделать объект данных для каждого компонента, если нет в глобальном
+        // Сделать обновление после реактивного изменения
+        console.group('VNode');
+        console.log('DATA', this.getVars());
+        console.groupEnd();
         let result = this;
         if (this.isText) {
             this.setText();
@@ -190,6 +199,7 @@ class VNode {
     setText() {
         let data = this.data;
         Directives.expr(data.expr, this.getVars(), data);
+        if (data.changed) this.node.text(data.current);
     }
 
     /**
