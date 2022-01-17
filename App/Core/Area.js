@@ -18,10 +18,17 @@ class Area {
         if (!path) return null;
         let current = this.globals;
         for (let item of path) {
-            if (item in current) current = current[item];
-            else return null;
+            if (!(item in current)) current[item] = this.empty(current.proxy);
+            current = current[item];
         }
         return current.proxy;
+    }
+
+    static empty(parentProxy = null) {
+        let vars = {};
+        let proxy = LocalProxy.on(vars);
+        if (parentProxy) proxy.__proto__ = parentProxy;
+        return { vars, proxy };
     }
 
     /**
