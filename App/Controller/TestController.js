@@ -26,10 +26,11 @@ class TestController extends Controller {
         console.log('START TestController');
     }
 
-    click() {
+    click(ev) {
+        console.log(ev);
+        console.log('Click', this);
         //this.counter += 10;
         this.customVar3 -= 8;
-        console.log('Click', this);
     }
 
     mounted() {

@@ -10,7 +10,7 @@ class VNode {
     isConstr = false;
     //Является элементом списка
     isListItem = false;
-    //HTML-элемент
+    //Объект NodeElement
     node;
     //Параметры элемента
     data;

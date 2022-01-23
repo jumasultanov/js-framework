@@ -1,10 +1,12 @@
 <? require('layout/header.php'); ?>
     <main role="main" m-block="content:TestController">
-        <div class="container" :data-count="counter" :test="customVar3" @click="click()">
+        <div class="container" :data-count="counter">
+            <button @click="click">change TOP {{ customVar3 }}</button>
             <div class="row">
                 <div class="col-8">
                     <div class="mb-5" m-block="description:TestController">
-                        <p :data-count="counter" :test="customVar3" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
+                        <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
+                        <button @click="click">change INNER {{ customVar3 }}</button>
                         <p m-if="previewText">Start preview text</p>
                         <p m-else>Preview text not found</p>
                     </div>

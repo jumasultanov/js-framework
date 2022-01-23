@@ -3,6 +3,8 @@ const call = (expr, ctx) => new Function(`with(this){${`return ${expr}`}}`).bind
 class Directives {
 
     static $dep;
+
+    static methodExpression = /^([a-z][\w\.]+)(\(.*\)){0,1}$/i;
     
     static exec(methodName, el, name, val, ctx) {
         if (methodName) {
@@ -45,15 +47,29 @@ class Directives {
      *      обновление DOM делаем через класс VNode или VDOM
      */
 
+    /**
+     * Установка событии
+     * @param {NodeElement} el Элемент прослушки
+     * @param {string} name Название события
+     * @param {string} val Название метода в объекте данных
+     * @param {object|null} ctx Объект данных
+     */
     static on(el, name, val, ctx) {
-        // TODO: add modes for events
+        // TODO: add modes for events, example: @click.mode="click"
         // Сразу фиксируется функция события, 
         // не предполагает будущих изменении на другие функции
-        el.getNode()[`on${name}`] = event => {
-            if (!val) val = "''";
-            if (/^[a-z][\w\.]+$/i.test(val.trim())) {
-                return call(`${val}(event)`, Object.assign({ event }, ctx));
+        if (!val) val = "''";
+        let method = '',
+            args = '',
+            match = Directives.methodExpression.exec(val.trim());
+        if (match) {
+            if (ctx[val.trim()] instanceof Function) {
+                method = match[1];
+                args = match[2]||'(event)';
             }
+        }
+        el.getNode()[`on${name}`] = () => {
+            if (method) return call(`${method}.call(this, ${args.substring(1, args.length - 1)})`, ctx);
             return call(val, ctx);
         };
     }
