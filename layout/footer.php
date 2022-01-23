@@ -7,6 +7,7 @@
                 param1: 'str',
                 isValid: false,
                 count: 5,
+                counter: 100,
                 types: {
                     num: 'number',
                     str: 'string',
@@ -15,10 +16,11 @@
             },
             content: {
                 vars: {
-                    counter: 100
+                    //counter: 100,
                 },
                 description: {
                     vars: {
+                        //counter: 100,
                         previewText: 'Simple description for this text'
                     }
                 },
@@ -31,5 +33,6 @@
             }
         }
     </script>
+    <script src="/test.js"></script>
 </body>
 </html>

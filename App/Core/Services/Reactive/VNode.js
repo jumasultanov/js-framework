@@ -92,8 +92,11 @@ class VNode {
      * Делаем объекты вложенными
      * @param {VNode[]} vnodes
      */
-    addChildren(vnodes) {
-        for (const vnode of vnodes) this.children.push(vnode);
+    addChildren(vnodes, vdom) {
+        for (const vnode of vnodes) {
+            this.children.push(vnode);
+            vnode.setVDOM(vdom);
+        }
     }
 
     /**
@@ -110,12 +113,6 @@ class VNode {
      * @returns {VNode|null}
      */
     setDirectives() {
-        // TO CONTINUE: 
-        // Сделать объект данных для каждого компонента, если нет в глобальном
-        // Сделать обновление после реактивного изменения
-        console.group('VNode');
-        console.log('DATA', this.getVars());
-        console.groupEnd();
         let result = this;
         if (this.isText) {
             this.setText();
@@ -156,10 +153,15 @@ class VNode {
      * 
      */
     setAttributes() {
+        // TO CONTINUE: 
+        // Сделать обновление после реактивного изменения
+        // Рассмотреть вариант, когда массовое изменение или рекурсивное изменение
+        // не должно обрабатываться несколько раз
         for (const name in this.data.attrs) {
             const data = this.data.attrs[name];
-            Directives.expr(data.expr, this.getVars(), data);
-            if (data.changed) this.node.attr(name, data.current);
+            Directives.expr(data.expr, this.getVars(), data, true, () => {
+                this.node.attr(name, data.current);
+            });
         }
     }
 
@@ -198,8 +200,9 @@ class VNode {
      */
     setText() {
         let data = this.data;
-        Directives.expr(data.expr, this.getVars(), data);
-        if (data.changed) this.node.text(data.current);
+        Directives.expr(data.expr, this.getVars(), data, true, () => {
+            this.node.text(data.current);
+        });
     }
 
     /**

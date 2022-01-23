@@ -39,7 +39,9 @@ class Component extends BaseComponent {
      * Определяем область данных для компонента
      */
     defineArea() {
-        this.vars = Area.find(this.path);
+        let { proxy, vars } = Area.find(this.path);
+        this.vars = proxy;
+        this.controllers.forEach(controller => controller.mergeTo(vars));
         return this;
     }
 

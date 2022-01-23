@@ -16,13 +16,14 @@ class Directives {
         return false;
     }
 
-    static expr(expr, ctx, data, check = true) {
+    static expr(expr, ctx, data, check = true, callback) {
         this.$dep = () => {
             let val = call(expr, ctx);
             if (check) {
                 if (data.current !== val) {
                     data.current = val;
                     data.changed = true;
+                    if (callback) callback();
                 } else {
                     data.changed = false;
                 }

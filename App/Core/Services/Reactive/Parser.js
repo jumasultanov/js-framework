@@ -73,7 +73,7 @@ class Parser {
             }
             if (data) {
                 child = data.breakpoint;
-                if (parent) parent.addChildren(data.nodes);
+                if (parent) parent.addChildren(data.nodes, this.vdom);
                 else this.vdom.add(data.nodes);
             }
             this.walk(child, currentParent);

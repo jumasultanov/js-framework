@@ -10,7 +10,7 @@ class Area {
     /**
      * Возвращает прокси по ее пути
      * @param {string[]|string} path Путь до прокси
-     * @returns {Proxy|null}
+     * @returns {Proxy}
      */
     static find(path) {
         //Проверка
@@ -18,17 +18,26 @@ class Area {
         if (!path) return null;
         let current = this.globals;
         for (let item of path) {
-            if (!(item in current)) current[item] = this.empty(current.proxy);
+            if (!(item in current)) {
+                current[item] = this.empty(current.proxy);
+            }
             current = current[item];
         }
-        return current.proxy;
+        return {
+            proxy: current.proxy,
+            vars: current.vars
+        };
     }
 
+    /**
+     * Возвращает пустой объект и его прокси
+     * @param {Proxy} parentProxy 
+     * @returns {object}
+     */
     static empty(parentProxy = null) {
-        let vars = {};
-        let proxy = LocalProxy.on(vars);
+        const { proxy, vars } = LocalProxy.on({});
         if (parentProxy) proxy.__proto__ = parentProxy;
-        return { vars, proxy };
+        return { proxy, vars };
     }
 
     /**
@@ -65,11 +74,12 @@ class Area {
         if (object instanceof Array) return;
         if (!('vars' in object)) return;
         //Создание прокси и указание родителя
-        let proxy = LocalProxy.on(object.vars);
+        const { proxy, vars } = LocalProxy.on(object.vars);
         if (parent) proxy.__proto__ = parent;
         object.proxy = proxy;
+        object.vars = vars;
         //Проход по дочерним объектам
-        for (let namespace in object) {
+        for (const namespace in object) {
             if (this.reservedWords.has(namespace)) continue;
             this.parseObjects(object[namespace], proxy);
         }

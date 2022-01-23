@@ -100,9 +100,9 @@ class BaseComponent {
             // TODO: пробегаемся по дереву и включаем компонент
             // По условию что конструкции в родительском компоненте
             // не блокиует данный компонент
-            for (let item in element) {
-                element[item].enable();
-                this.enableAll(element[item].children);
+            for (const obj of Object.values(element)) {
+                obj.enable();
+                this.enableAll(obj.children);
             }
         }
     }

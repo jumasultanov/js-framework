@@ -3,19 +3,31 @@ import Directives from './Directives.js';
 class LocalProxy {
 
     static deps = {};
+    //static counter = 0;
     
     /**
      * Возвращает прокси для объекта
-     * @param {object} obj Проксируемый объект
+     * @param {object} vars Проксируемый объект
      * @returns {Proxy}
      */
-    static on(obj) {
-        /**
-         * TODO:
-         *      Что то сделать для вложенных объектов и объектов моделей
-         */
-        return new Proxy(obj, this);
+    static on(vars) {
+        // TODO: нужно для вложенных объектов сделать прокси
+        // Для трансформации думаю это не нужно, 
+        // т.к. это делается для добавления методов
+        //vars = this.transform(vars);
+        const proxy = new Proxy(vars, this);
+        return { proxy, vars };
     }
+
+    /*
+    static transform(vars) {
+        this.counter++;
+        const number = (this.counter/1000000).toString().substring(2);
+        const className = `GlobalVars${number}`;
+        return new (eval(`(function ${className}(object) {
+            Object.assign(this, object)
+        })`))(vars);
+    }*/
 
     /**
      * Проксирует объект и добавляет его в родительский прокси объект
@@ -30,13 +42,13 @@ class LocalProxy {
 
     static get(target, prop, receiver) {
         if (typeof prop != 'symbol') {
-            console.log(`GET ${prop}`);
             /**
              * TODO:
              *  Продумать ловлю изменении в конкретном месте относительно virtual DOM,
              *  который надо будет сделать
              */
             if (Directives.$dep) {
+                console.log(`GET ${prop}`);
                 if (!this.deps[prop]) this.deps[prop] = [];
                 this.deps[prop].push(Directives.$dep);
             }
@@ -45,17 +57,44 @@ class LocalProxy {
     }
     
     static set(target, prop, val, receiver) {
+        //Для установки радительского Proxy объекта
+        if (prop == '__proto__') {
+            /*console.warn('SET PROTO');
+            console.warn('TARGET', target);
+            console.warn('VALUE', val);
+            console.warn('RC', receiver);*/
+            target.__proto__ = val;
+            return true;
+        }
+        //console.log(prop, target);
+        if (target.hasOwnProperty([prop])) {
+            // TODO: 
+            Reflect.set(target, prop, val, receiver);
+            if (this.deps[prop]) {
+                console.log(`SET ${prop} = ${val}`);
+                for (const dep of this.deps[prop]) dep(val);
+            }
+            return true;
+        } else {
+            //return Reflect.set(target.__proto__, prop, val);
+            target.__proto__[prop] = val;
+        }
+        return true;
+        //Выполняем изменение значения
+        let result = Reflect.set(target, prop, val, receiver);
+        return result;
+        /*
         //Выполняем изменение значения
         let result = Reflect.set(target, prop, val, receiver);
         //Если указывает родительский объект
         if (prop == '__proto__') return result;
         
-        console.log(`SET ${prop} = ${val}`, target);
         //
-        if (!prop.startsWith('$') && this.deps[prop]) {
+        if (this.deps[prop]) {
+            console.log(`SET ${prop} = ${val}`);
             for (const dep of this.deps[prop]) dep(val);
         }
-        return result;
+        return result;*/
     }
 
     // TODO:
