@@ -4,8 +4,8 @@
             <button @click="click">change TOP {{ customVar3 }}</button>
             <div class="row">
                 <div class="col-8">
-                    <div class="mb-5" m-block="description:TestController">
-                        <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
+                    <div class="mb-5" m-block="description:TestController" :data-count="counter">
+                        <p @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <button @click="click">change INNER {{ customVar3 }}</button>
                         <p m-if="previewText">Start preview text</p>
                         <p m-else>Preview text not found</p>

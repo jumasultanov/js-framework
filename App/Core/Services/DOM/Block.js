@@ -1,3 +1,5 @@
+import { AppConfig } from "../../../config.js";
+
 class Block {
 
     /**
@@ -8,12 +10,12 @@ class Block {
     static getAll(parentElement) {
         const items = [];
         parentElement
-            .querySelectorAll('[m-block]:not([started])')
+            .querySelectorAll(`[${AppConfig.componentAttr}]:not([started])`)
             .forEach(element => {
                 const info = this.getInfo(element);
                 items.push(Object.assign(info, {
                     element,
-                    parent: element.parentElement.closest('[m-block]')
+                    parent: element.parentElement.closest(`[${AppConfig.componentAttr}]`)
                 }));
             });
         return items;
@@ -25,7 +27,7 @@ class Block {
      * @returns {Object[]}
      */
     static getInfo(element) {
-        const block = element.getAttribute('m-block') || null;
+        const block = element.getAttribute(AppConfig.componentAttr) || null;
         if (block === null) return false;
         let name = block;
         let controllerNames = [];

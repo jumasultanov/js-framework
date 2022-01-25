@@ -1,3 +1,4 @@
+import { AppConfig } from '../../../config.js';
 import VDOM from './VDOM.js'
 import VNode from './VNode.js'
 
@@ -34,51 +35,74 @@ class Parser {
     /**
      * Прохождение по элементам блока и сбор результата парсинга в объект VDOM
      * @param {Node} node 
-     * @param {null|VNode} parent
+     * @param {null|VNode} parent Родитель в структуре
+     * @param {boolean} include Будет ли парситься переданный элемент
      */
-    walk(node, parent = null) {
-        //Get first child node element
-        let child = node?.firstChild;
-        if (!child && node.tagName == 'TEMPLATE') {
+    walk(node, parent = null, include = true) {
+        // TODO: Если шаблон TEMPLATE или
+        // спец. блоки с атрибутом m-dynamic (если они вообще нужны, надо подумать про SEO)
+        // то надо спарсить, но не запускать реактивность
+        /*if (!child && node.tagName == 'TEMPLATE') {
             //Ignore exclusive templates
             if (node.hasAttribute('dynamic')) return;
             child = node.content.firstChild;
-        }
+        }*/
+
+        if (node.nodeType != Node.ELEMENT_NODE) return;
+        //Определяем первый элемент парсинга
+        let child = node.firstChild;
+        if (include) child = node;
         while (child) {
-            let currentParent = parent;
-            let data;
-            if (child.nodeType == Node.ELEMENT_NODE) {
-                //Ignore inner blocks
-                if (child.getAttribute('m-block') !== null) {
-                    child = child.nextSibling;
-                    continue;
-                }
-                data = Parser.parseNode(child);
+            let data = this.parse(child, include);
+            if (data !== false) {
+                //Если есть данные с парсинга
                 if (data) {
-                    currentParent = data.nodes[0];
-                    if (data.internals.length) {
-                        data.internals.forEach(item => {
-                            let internalParent = currentParent;
-                            let internalNode = item;
-                            if (item instanceof VNode) {
-                                internalParent = item;
-                                internalNode = item.node;
-                            }
-                            this.walk(internalNode, internalParent);
-                        });
-                    }
+                    //Если есть замена или тот же элемент
+                    child = data.breakpoint;
+                    //Добавляем в структуру
+                    if (parent) parent.addChildren(data.nodes, this.vdom);
+                    else this.vdom.add(data.nodes);
                 }
-            } else if (child.nodeType == Node.TEXT_NODE) {
-                data = Parser.parseText(child);
+                //Проходимся по дочерним элементам
+                this.walk(child, parent, false);
             }
-            if (data) {
-                child = data.breakpoint;
-                if (parent) parent.addChildren(data.nodes, this.vdom);
-                else this.vdom.add(data.nodes);
-            }
-            this.walk(child, currentParent);
+            if (include) break;
             child = child.nextSibling;
         }
+    }
+
+    /**
+     * Возвращает данные парсинга Node элемента
+     * @param {Node} node 
+     * @param {boolean} ignoreSkip Игнориуются проверки
+     * @returns {object|null|false} Данные, если найдены директивы, либо null - ничего не найдено, либо false - если элемент нельзя трогать
+     */
+    parse(node, ignoreCheck = false) {
+        //Если текст
+        if (node.nodeType == Node.TEXT_NODE) return Parser.parseText(node);
+        //Если элемент
+        if (node.nodeType == Node.ELEMENT_NODE) {
+            //Игнорируем блоки-компоненты
+            if (!ignoreCheck && node.getAttribute(AppConfig.componentAttr) !== null) return false;
+            //Получаем данные
+            let data = Parser.parseNode(node);
+            if (data) {
+                //Если есть вложенные конструкции
+                if (data.internals.length) {
+                    data.internals.forEach(item => {
+                        let internalParent = data.nodes[0];
+                        let internalNode = item;
+                        if (item instanceof VNode) {
+                            internalParent = item;
+                            internalNode = item.node;
+                        }
+                        this.walk(internalNode, internalParent, false);
+                    });
+                }
+            }
+            return data;
+        }
+        return false;
     }
 
     /**
@@ -95,10 +119,10 @@ class Parser {
     /**
      * Парсим элемент и возвращаем данные по его конструкции и выражениям
      * @param {Node} node 
-     * @returns false | { nodes: VNode[], breakpoint: Node, internals: VNode[]|Node[] }
+     * @returns {{ nodes: VNode[], breakpoint: Node, internals: VNode[]|Node[] } | null}
      */
     static parseNode(node) {
-        if (!(node instanceof Node)) return false;
+        if (!(node instanceof Node)) return null;
         let result = VNode.getEmptyData();
         let rmv = [];
         let breakpoint = node;
@@ -109,6 +133,7 @@ class Parser {
         let tempVNodeIndex;
         //Перебор атрибутов
         for (const {name, value} of node.attributes) {
+            if (name == AppConfig.componentAttr) continue;
             let f, $name;
             if (name.startsWith('m-')) f = '#';
             else f = name.substr(0, 1);
@@ -160,7 +185,7 @@ class Parser {
                             internals.push(node);
                             break;
                         //Пассивные выражения, которые могут измениться позже
-                        case 'dynamic':
+                        /*case 'dynamic':
                             let template = document.querySelector(`template[${exp}="${value}"]`);
                             if (template) {
                                 let tempVNode = new VNode(template.content, VNode.getEmptyData());
@@ -168,7 +193,7 @@ class Parser {
                                 tempVNodeIndex = internals.length;
                                 internals.push(tempVNode);
                             }
-                            break;
+                            break;*/
                     }
                     break;
                 default:
@@ -184,7 +209,7 @@ class Parser {
             breakpoint = space;
             result.space = space;
         }
-        if (!isSpace && !rmv.length) return false;
+        if (!isSpace && !rmv.length) return null;
         for (const name of rmv) node.removeAttribute(name);
         let currentNode = isTemplate ? node.content : node;
         //insertTemplate
