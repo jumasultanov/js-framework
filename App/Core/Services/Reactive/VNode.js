@@ -1,5 +1,5 @@
 import Directives from './Directives.js';
-import VDOM from './VDOM.js';
+import Component from '../../Component.js';
 import { NodeElement } from '../../Service.js';
 
 class VNode {
@@ -14,27 +14,16 @@ class VNode {
     node;
     //Параметры элемента
     data;
-    //Вложенные объекты VNode[]
-    children = [];
-    //Объект VDOM, в котором содержится текущий экземпляр VNode
-    vdom;
+    //Компонент
+    component;
 
-    constructor(node, data) {
+    constructor(node, component, data) {
         this.node = new NodeElement(node);
+        this.component = component;
         this.isText = this.node.isText();
         if (Object.keys(data.constr||{}).length) this.isConstr = true;
         if (data.listExtension) this.isListItem = true;
         this.data = data;
-    }
-
-    /**
-     * Устанавливается объект VDOM
-     * @param {VDOM} vdom 
-     * @returns {this}
-     */
-    setVDOM(vdom) {
-        this.vdom = vdom;
-        return this;
     }
 
     /**
@@ -89,22 +78,11 @@ class VNode {
     }
 
     /**
-     * Делаем объекты вложенными
-     * @param {VNode[]} vnodes
-     */
-    addChildren(vnodes, vdom) {
-        for (const vnode of vnodes) {
-            this.children.push(vnode);
-            vnode.setVDOM(vdom);
-        }
-    }
-
-    /**
      * Возвращает объект с данными
      * @returns {object}
      */
     getVars() {
-        if (this.vdom instanceof VDOM) return this.vdom.getVars();
+        if (this.component instanceof Component) return this.component.getVars();
         else return null;
     }
 
@@ -227,11 +205,14 @@ class VNode {
      * @returns {VNode|null}
      */
     constrIf(next = false) {
+        this.ignoreSet = true;
         let data = next ? this.data.constr['else-if'] : this.data.constr.if;
         let success = !!Directives.expr(data.expr, this.getVars(), data);
         data.current = success;
-        if (success) return this;
-        this.ignoreSet = true;
+        if (success) {
+            
+            return this;
+        }
         if (data.next instanceof VNode) {
             data.next.setDirectives();
             return data.next;

@@ -1,6 +1,6 @@
 import { AppConfig } from '../../../config.js';
-import VDOM from './VDOM.js'
-import VNode from './VNode.js'
+import Component from '../../Component.js'
+import { Block, VDOM, VNode } from '../../Service.js';
 
 class Parser {
     
@@ -9,10 +9,33 @@ class Parser {
 
     node;
     vdom;
+    component;
 
-    constructor(node) {
+    constructor(node, component) {
         this.node = node;
+        this.component = component;
         this.vdom = new VDOM();
+    }
+
+    /**
+     * Возвращает список компонентов после парсинга
+     * @param {Element} element Элемент парсинга
+     * @param {boolean} include Включен ли элемент в парсинг
+     * @return {object}
+     */
+    static start(element, include = true) {
+        let result = {};
+        Block.find(element, include, true, current => {
+            if (current.hasAttribute(AppConfig.componentAttr)) {
+                const component = Component.create(current);
+                if (component) {
+                    result[component.name] = component;
+                    return false;
+                }
+            }
+            return true;
+        });
+        return result;
     }
 
     /**
@@ -35,103 +58,56 @@ class Parser {
     /**
      * Прохождение по элементам блока и сбор результата парсинга в объект VDOM
      * @param {Node} node 
-     * @param {null|VNode} parent Родитель в структуре
      * @param {boolean} include Будет ли парситься переданный элемент
      */
-    walk(node, parent = null, include = true) {
-        // TODO: Если шаблон TEMPLATE или
-        // спец. блоки с атрибутом m-dynamic (если они вообще нужны, надо подумать про SEO)
-        // то надо спарсить, но не запускать реактивность
-        /*if (!child && node.tagName == 'TEMPLATE') {
-            //Ignore exclusive templates
-            if (node.hasAttribute('dynamic')) return;
-            child = node.content.firstChild;
-        }*/
-
-        if (node.nodeType != Node.ELEMENT_NODE) return;
-        //Определяем первый элемент парсинга
-        let child = node.firstChild;
-        if (include) child = node;
-        while (child) {
-            let data = this.parse(child, include);
-            if (data !== false) {
-                //Если есть данные с парсинга
-                if (data) {
-                    //Если есть замена или тот же элемент
-                    child = data.breakpoint;
-                    //Добавляем в структуру
-                    if (parent) parent.addChildren(data.nodes, this.vdom);
-                    else this.vdom.add(data.nodes);
+    walk(node, include = true) {
+        Block.find(node, include, false, current => {
+            if (current.nodeType == Node.ELEMENT_NODE) {
+                //Если это блок-компонент
+                if (current.hasAttribute(AppConfig.componentAttr)) {
+                    if (Component.create(current, this.component)) return false;
                 }
-                //Проходимся по дочерним элементам
-                this.walk(child, parent, false);
             }
-            if (include) break;
-            child = child.nextSibling;
-        }
+            let data = this.parse(current);
+            if (data === false) return false;
+            //Если есть данные с парсинга
+            if (data) {
+                //Добавляем
+                this.vdom.add(data.nodes);
+                //Если есть замена или тот же элемент или переместились на другой элемент
+                if (data.breakpoint !== current) return data.breakpoint;
+            }
+            return true;
+        });
     }
 
     /**
      * Возвращает данные парсинга Node элемента
-     * @param {Node} node 
-     * @param {boolean} ignoreSkip Игнориуются проверки
+     * @param {Node} node
      * @returns {object|null|false} Данные, если найдены директивы, либо null - ничего не найдено, либо false - если элемент нельзя трогать
      */
-    parse(node, ignoreCheck = false) {
+    parse(node) {
         //Если текст
-        if (node.nodeType == Node.TEXT_NODE) return Parser.parseText(node);
+        if (node.nodeType == Node.TEXT_NODE) return this.parseText(node);
         //Если элемент
-        if (node.nodeType == Node.ELEMENT_NODE) {
-            //Игнорируем блоки-компоненты
-            if (!ignoreCheck && node.getAttribute(AppConfig.componentAttr) !== null) return false;
-            //Получаем данные
-            let data = Parser.parseNode(node);
-            if (data) {
-                //Если есть вложенные конструкции
-                if (data.internals.length) {
-                    data.internals.forEach(item => {
-                        let internalParent = data.nodes[0];
-                        let internalNode = item;
-                        if (item instanceof VNode) {
-                            internalParent = item;
-                            internalNode = item.node;
-                        }
-                        this.walk(internalNode, internalParent, false);
-                    });
-                }
-            }
-            return data;
-        }
+        if (node.nodeType == Node.ELEMENT_NODE) return this.parseNode(node);
         return false;
-    }
-
-    /**
-     * Парсим блок элемента
-     * @param {Node} node 
-     * @returns {Parser}
-     */
-    static build(node) {
-        const self = new this(node);
-        self.build();
-        return self;
     }
     
     /**
      * Парсим элемент и возвращаем данные по его конструкции и выражениям
      * @param {Node} node 
-     * @returns {{ nodes: VNode[], breakpoint: Node, internals: VNode[]|Node[] } | null}
+     * @returns {{ nodes: VNode[], breakpoint: Node } | null}
      */
-    static parseNode(node) {
+    parseNode(node) {
         if (!(node instanceof Node)) return null;
         let result = VNode.getEmptyData();
         let rmv = [];
         let breakpoint = node;
-        let internals = [];
-        let isSpace = false;
-        let isTemplate = node.tagName == 'TEMPLATE';
-        let insertTemplate = [];
-        let tempVNodeIndex;
+        //let isTemplate = node.tagName == 'TEMPLATE';
+        let construction;
         //Перебор атрибутов
+        cycleAttrs:
         for (const {name, value} of node.attributes) {
             if (name == AppConfig.componentAttr) continue;
             let f, $name;
@@ -139,13 +115,15 @@ class Parser {
             else f = name.substr(0, 1);
             //Event
             switch (f) {
+                //События
                 case '@':
-                    if (isTemplate) break;
+                    //if (isTemplate) break;
                     $name = name.substr(1);
                     result.on[$name] = {expr: value/*, mods: []*/};
                     break;
+                //Атрибуты
                 case ':':
-                    if (isTemplate) break;
+                    //if (isTemplate) break;
                     $name = name.substr(1);
                     if ($name == 'style') {
                         // TODO: parse style json for object
@@ -156,74 +134,93 @@ class Parser {
                     } else if ($name in node) result.props[$name] = value;
                     else result.attrs[$name] = { expr: value };
                     break;
-                case '#':
-                    let exp = name.substr(2);
-                    result.constr[exp] = { expr: value };
-                    switch (exp) {
+                //Конструкции
+                /*case '#':
+                    construction = name.substr(2);
+                    result.constr[construction] = { expr: value };
+                    const obj = result.constr[construction];
+                    switch (construction) {
                         //Активные выражения, которые заменяются на коммент
                         case 'if':
-                        case 'else-if':
-                            if (!isSpace) {
-                                //Состояние условия false
-                                result.constr[exp].current = false;
-                                result.constr[exp].changed = false;
-                                //Если след. элемент часть конструкции
-                                const next = this.parseNode(node.nextElementSibling);
-                                if (next) {
-                                    result.constr[exp].next = next.nodes[0];
-                                    internals.push(next.nodes[0]);
-                                }
-                            }
-                        case 'else':
-                        case 'for':
-                        // TODO: add more expressions
-                        // on example: switch
-                            if (isSpace) {
-                                delete result.constr[exp];
-                                insertTemplate.push({ name, value });
-                            } else isSpace = true;
-                            internals.push(node);
-                            break;
-                        //Пассивные выражения, которые могут измениться позже
-                        /*case 'dynamic':
-                            let template = document.querySelector(`template[${exp}="${value}"]`);
-                            if (template) {
-                                let tempVNode = new VNode(template.content, VNode.getEmptyData());
-                                result.constr[exp].vnode = tempVNode;
-                                tempVNodeIndex = internals.length;
-                                internals.push(tempVNode);
-                            }
-                            break;*/
+                            let list = {};
+                            const next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
+                            obj.next = next;
+                            Object.assign(result.constr, list);
+                        //case 'for':
+                            //
+                            //break;
                     }
-                    break;
+                    node.removeAttribute(name);
+                    //Заменяем на пустой коммент
+                    result.space = this.replaceBlock(node);
+                    //Создаем компонент
+                    obj.component = this.createComponent(node);
+                    breakpoint = result.space;
+                    rmv = [];
+                    break cycleAttrs;*/
                 default:
                     continue;
             }
             rmv.push(name);
         }
-        //Если нужно заменить на коммент,
-        // делается одноразово, дальше формируется глубже template
-        if (isSpace) {
-            let space = new Comment();
-            node.parentNode.replaceChild(space, node);
-            breakpoint = space;
-            result.space = space;
-        }
-        if (!isSpace && !rmv.length) return null;
+        if (!construction && !rmv.length) return null;
+        //Удаляем атрибуты
         for (const name of rmv) node.removeAttribute(name);
-        let currentNode = isTemplate ? node.content : node;
-        //insertTemplate
-        if (isSpace) {
-            //Если есть активное выражение и выражение dynamic, то убираем в подшаблон
-            if (result.constr.dynamic) {
-                insertTemplate.push({ name: 'c-dynamic', value: result.constr.dynamic.expr });
-                delete result.constr.dynamic;
-                internals.splice(tempVNodeIndex, 1);
-            }
-            this.insertTemplates(insertTemplate, currentNode);
+        // Возвращаем VNode[] и элемент, с которого продолжится парсинг
+        return {nodes: [new VNode(node, this.component, result)], breakpoint };
+    }
+
+    /**
+     * Поиск и парсинг соседних элементов конструкции
+     * @param {Node} node Рассматриваемый элемент
+     * @param {string[]} attrs Искомые атрибуты
+     * @param {object} list Список конструкции
+     * @returns {string|null} Название следующей конструкции
+     */
+    unionNodes(node, attrs, list) {
+        if (!(node instanceof Node)) return null;
+        if (node.nodeType != Node.ELEMENT_NODE) return null;
+        for (const attr of attrs) {
+            if (!node.hasAttribute(attr)) continue;
+            //Сразу проверяем следующий элмент
+            const next = this.unionNodes(node.nextElementSibling, attrs, list);
+            //Готовим элемент к транспортировке
+            node.parentNode.removeChild(node);
+            const expr = node.getAttribute(attr);
+            node.removeAttribute(attr);
+            //Указываем имя для связки
+            const name = attr.substr(2);
+            const uniqueName = name + '-' + Object.keys(list).length;
+            list[uniqueName] = {
+                next, name, expr,
+                component: this.createComponent(node)
+            };
+            return uniqueName;
         }
-        // return nodes and other actions
-        return {nodes: [new VNode(currentNode, result)], breakpoint, internals };
+        return null;
+    }
+
+    /**
+     * Создание компонента для элемента
+     * @param {Node} node 
+     * @returns {Component}
+     */
+    createComponent(node) {
+        const component = new Component({ element: node, name: '#' });
+        component.build();
+        component.display(false);
+        return component;
+    }
+
+    /**
+     * Заменяет элемент HTML-комментарием и возвращает его
+     * @param {Node} node 
+     * @returns {Comment}
+     */
+    replaceBlock(node) {
+        const space = new Comment();
+        node.parentNode.replaceChild(space, node);
+        return space;
     }
     
     /**
@@ -231,13 +228,13 @@ class Parser {
      * @param {Node} node 
      * @returns false | { nodes: VNode[], breakpoint: Node }
      */
-     static parseText(node) {
+    parseText(node) {
         if (!(node instanceof Node)) return false;
         let newNodes = [];
         let split = [];
         let end = false;
         let str = node.textContent;
-        for (const match of str.matchAll(this.findExpressions)) {
+        for (const match of str.matchAll(Parser.findExpressions)) {
             //Pre text
             if (split.length == 0 && match.index > 0) split.push(new Text(match.input.substring(0, match.index)));
             //Between text after prev
@@ -247,7 +244,7 @@ class Parser {
             //Add expression
             let text = new Text(match.input.substring(match.index, end));
             let value = text.textContent.substr(2, match[0].length - 4);
-            newNodes.push(new VNode(text, {expr: value}));
+            newNodes.push(new VNode(text, this.component, {expr: value}));
             split.push(text);
         }
         if (!split.length) return false;
@@ -259,25 +256,6 @@ class Parser {
         return {nodes: newNodes, breakpoint: split[split.length - 1]};
     }
     
-    /**
-    * Добавляем в элемент конструкции, увеличивая глубину узлов
-    * @param {object[]} inserts Вставляемые конструкции
-    * @param {Node} node  
-    */
-   static insertTemplates(inserts, node) {
-       if (!inserts.length) return;
-       let tree, last;
-       inserts.forEach(insert => {
-           let template = document.createElement('template');
-           template.setAttribute(insert.name, insert.value);
-           if (last) tree.content.appendChild(template);
-           else tree = template;
-           last = template;
-       });
-       node.childNodes.forEach(child => tree.content.appendChild(child));
-       node.appendChild(tree);
-   }
-
 }
 
 export default Parser

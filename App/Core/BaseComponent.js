@@ -1,11 +1,11 @@
-import { Block } from './Service.js';
+import { Block, Parser } from './Service.js';
 
 class BaseComponent {
 
     //Все компоненты
     static items = {};
-    static count;
-    static currentComplete;
+    static count = 0;
+    static currentComplete = -1;
 
     /**
      * 
@@ -16,69 +16,43 @@ class BaseComponent {
     }
 
     /**
-     * Обновление компонентов относительно HTML-блоков
-     * @param {Element} parentElement Элемент, откуда будут браться блоки
+     * Инициализация компонентов относительно HTML-блоков
+     * @param {Element} parentElement Элемент, откуда начнется поиск компонентов
      */
-    static update(parentElement) {
-        this.updateTreeComponents(parentElement);
+    static init(parentElement) {
+        this.items = Parser.start(parentElement);
         console.log(this.items);
+        //На случай, когда нет контроллеров currentComplete смещается на -1
+        //  и дополнительно вызывется после перебора (на случай синхронного выполнения)
+        //Если контроллеры присутствуют, то смещение изчезает
+        //  и реактивность запускается после загрузки последнего контроллера (на случай асинхронного выполнения)
+        this.completeLoadControllers();
     }
 
     /**
-     * Обновление дерева компонентов из HTML-блоков
-     * @param {Element} parentElement Элемент, откуда будут браться блоки
+     * Инициализация компонента в контексте существующей иерархий
+     * @param {string[]} path 
+     * @param {Element} parentElement 
      */
-    static updateTreeComponents(parentElement) {
-        let prev = null, levels = [], level = -1;
-        //Получаем все блоки из DOM
-        let blocks = Block.getAll(parentElement);
-        //Контроль загрузок контроллеров
-        this.count = blocks.length;
-        this.currentComplete = 0;
-        //Формируем дерево
-        blocks.forEach(obj => {
-            const item = new this(obj);
-            //Если есть родительский блок
-            if (item.parent) {
-                //Если родитель совпадает с предыдущим элементом, то это его дочерний элемент
-                if (item.parent == prev.element) {
-                    //Добавление к родителю
-                    prev.appendChild(item);
-                    //Добавляем уровень
-                    level++;
-                    levels.push(item);
-                } else {
-                    //Если родитель не совпадает с предыдущим родителем, то ищем родителя в более высоком уровне
-                    if (item.parent != prev.parent) {
-                        //Ищем родительский уровень
-                        level--;
-                        while (level >= 0) {
-                            if (levels[level].element == item.parent) break;
-                            level--;
-                        }
-                        //Убираем уровни ниже
-                        levels.splice(level + 1);
-                        //Добавление к родителю
-                        levels[level].appendChild(item);
-                        //Добавляем уровень
-                        level++;
-                        levels.push(item);
-                    } else {
-                        //Добавление к родителю соседа
-                        levels[level - 1].appendChild(item);
-                    }
-                }
-            } else {
-                //Если нет родительского блока
-                level = 0;
-                levels = [item];
-                this.items[item.name] = item;
-                item.updatePath();
-            }
-            prev = item;
-            // Загружаем контроллеры
-            item.loadControllers();
-        });
+    static initPart(path, parentElement) {
+        // TODO: 
+    }
+
+    /**
+     * Инициализация компонента для блока
+     * @param {Element} element 
+     * @param {Component} parentComponent
+     * @returns {component|false}
+     */
+    static create(element, parentComponent = null) {
+        const info = Block.getInfo(element);
+        if (!info) return false;
+        info.element = element;
+        const component = new this(info);
+        if (parentComponent) parentComponent.appendChild(component);
+        else component.updatePath();
+        component.build().loadControllers();
+        return component;
     }
 
     /**
@@ -93,16 +67,18 @@ class BaseComponent {
     
     /**
      * Активируем все компоненты
-     * @param {Object} element Список компонентов
+     * @param {Object} items Список компонентов
      */
-    static enableAll(element) {
-        if (element instanceof Object) {
+    static enableAll(items) {
+        if (items instanceof Object) {
             // TODO: пробегаемся по дереву и включаем компонент
             // По условию что конструкции в родительском компоненте
             // не блокиует данный компонент
-            for (const obj of Object.values(element)) {
-                obj.enable();
-                this.enableAll(obj.children);
+
+            // TO CONTINUE: Сделать конструкцию IF
+            for (const component of Object.values(items)) {
+                component.enable();
+                if (!component.isHidden()) this.enableAll(component.children);
             }
         }
     }

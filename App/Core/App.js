@@ -8,7 +8,8 @@ class App {
      */
     static init(parentElement) {
         Area.parseGlobals();
-        Component.update(parentElement);
+        Component.init(parentElement);
+        //Component.update(parentElement);
     }
 
 }

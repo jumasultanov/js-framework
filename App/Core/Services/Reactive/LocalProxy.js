@@ -12,22 +12,9 @@ class LocalProxy {
      */
     static on(vars) {
         // TODO: нужно для вложенных объектов сделать прокси
-        // Для трансформации думаю это не нужно, 
-        // т.к. это делается для добавления методов
-        //vars = this.transform(vars);
         const proxy = new Proxy(vars, this);
         return { proxy, vars };
     }
-
-    /*
-    static transform(vars) {
-        this.counter++;
-        const number = (this.counter/1000000).toString().substring(2);
-        const className = `GlobalVars${number}`;
-        return new (eval(`(function ${className}(object) {
-            Object.assign(this, object)
-        })`))(vars);
-    }*/
 
     /**
      * Проксирует объект и добавляет его в родительский прокси объект
@@ -42,11 +29,8 @@ class LocalProxy {
 
     static get(target, prop, receiver) {
         if (typeof prop != 'symbol') {
-            /**
-             * TODO:
-             *  Продумать ловлю изменении в конкретном месте относительно virtual DOM,
-             *  который надо будет сделать
-             */
+            // TODO: Продумать ловлю изменении в конкретном месте относительно virtual DOM,
+            //       который надо будет сделать
             if (Directives.$dep) {
                 console.log(`GET ${prop}`);
                 if (!this.deps[prop]) this.deps[prop] = [];
@@ -80,21 +64,6 @@ class LocalProxy {
             target.__proto__[prop] = val;
         }
         return true;
-        //Выполняем изменение значения
-        let result = Reflect.set(target, prop, val, receiver);
-        return result;
-        /*
-        //Выполняем изменение значения
-        let result = Reflect.set(target, prop, val, receiver);
-        //Если указывает родительский объект
-        if (prop == '__proto__') return result;
-        
-        //
-        if (this.deps[prop]) {
-            console.log(`SET ${prop} = ${val}`);
-            for (const dep of this.deps[prop]) dep(val);
-        }
-        return result;*/
     }
 
     // TODO:

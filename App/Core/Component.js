@@ -11,8 +11,6 @@ class Component extends BaseComponent {
     loadedControllers = false;
     //Список имен контроллеров из парсера
     controllerNames = [];
-    //Родительский блок {Node|null} из парсера
-    parent;
     //Node элемент блока из парсера
     element;
     //Название компонента из парсера
@@ -25,14 +23,24 @@ class Component extends BaseComponent {
     vdom;
     //Данные(переменные) блока
     vars;
+    //Флаг отображения
+    hidden = false;
 
     constructor(data) {
         super();
         Object.assign(this, data);
+    }
+
+    /**
+     * Начало работы компонента
+     * @returns {this}
+     */
+    build() {
         //Парсим блок компонента
-        this.vdom = Parser
-            .build(this.element) //Строим списки VNode
+        this.vdom = new Parser(this.element, this)
+            .build() //Строим списки VNode
             .getVDOM(); //Получаем списки
+        return this;
     }
 
     /**
@@ -46,12 +54,44 @@ class Component extends BaseComponent {
     }
 
     /**
+     * Возвращает объект данных
+     * @returns {Proxy|null}
+     */
+    getVars() {
+        return this.vars;
+    }
+
+    /**
      * Добавление дочернего компонента
      * @param {Component} component 
      */
     appendChild(component) {
         this.children[component.name] = component;
         component.updatePath(this.path);
+    }
+
+    /**
+     * Скрытый компонент
+     * @returns {boolean}
+     */
+    isHidden() {
+        return this.hidden;
+    }
+
+    /**
+     * Видимость компонента
+     * @param {boolean} view 
+     */
+    display(view = true) {
+        this.hidden = !view;
+    }
+
+    /**
+     * Возвращает путь до компонента
+     * @returns {string[]}
+     */
+    getPath() {
+        return this.path;
     }
 
     /**
@@ -66,13 +106,16 @@ class Component extends BaseComponent {
     /**
      * Загрузка контроллеров
      * @param {Function} Функция вызовется после загрузки всех контроллеров
+     * @return {this}
      */
     loadControllers() {
-        if (!this.controllerNames.length) {
+        Component.count++;
+        if (this.controllerNames.length) {
+            this.controllerNames.forEach(controllerName => this.loadController(controllerName));
+        } else {
             this.completeLoadControllers();
-            return;
         }
-        this.controllerNames.forEach(controllerName => this.loadController(controllerName));
+        return this;
     }
 
     /**
@@ -121,7 +164,7 @@ class Component extends BaseComponent {
      */
     enable() {
         //Включаем реактивность и обновляем DOM
-        this.vdom.setVars(this.vars).enableReactive();
+        this.vdom.enableReactive();
     }
 
     /**

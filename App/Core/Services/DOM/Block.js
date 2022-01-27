@@ -3,22 +3,31 @@ import { AppConfig } from "../../../config.js";
 class Block {
 
     /**
-     * Возвращает массив данных элементов, которые содержат блоки-компоненты
-     * @param {Element} parentElement DOM Элемент, в котором ведется поиск
-     * @returns {Object[]}
+     * Перебор Node-элементов с вызовом check на каждой итерации
+     * @param {Node} element Элемент
+     * @param {boolean} include Будет ли прверяться переданный родительский элемент
+     * @param {boolean} onlyElements Ищутся ли только элементы c типом Node.ELEMENT_NODE
+     * @param {function} check Функция проверки на каждом найденном элементе.
+     *      Должна возвращать:
+     *          true -  если нужен поиск в дочерних элементах;
+     *          false - если не нужен;
+     *          {Node} - если нужно передать элемент, с которого продолжиться поиск.
+     * @return {null|Node} Если нужно продолжить поиск с текущего элемента, то он возвращается
      */
-    static getAll(parentElement) {
-        const items = [];
-        parentElement
-            .querySelectorAll(`[${AppConfig.componentAttr}]:not([started])`)
-            .forEach(element => {
-                const info = this.getInfo(element);
-                items.push(Object.assign(info, {
-                    element,
-                    parent: element.parentElement.closest(`[${AppConfig.componentAttr}]`)
-                }));
-            });
-        return items;
+    static find(element, include, onlyElements, check) {
+        let walk = !include || check(element);
+        if (walk instanceof Node) return walk;
+        if (walk) {
+            const nextProp = onlyElements ? 'nextElementSibling' : 'nextSibling';
+            const firstChildProp = onlyElements ? 'firstElementChild' : 'firstChild';
+            let child = element[firstChildProp];
+            while(child) {
+                const breakpoint = this.find(child, true, onlyElements, check);
+                if (breakpoint instanceof Node) child = breakpoint[nextProp];
+                else child = child[nextProp];
+            }
+        }
+        return null;
     }
 
     /**
@@ -29,6 +38,7 @@ class Block {
     static getInfo(element) {
         const block = element.getAttribute(AppConfig.componentAttr) || null;
         if (block === null) return false;
+        element.removeAttribute(AppConfig.componentAttr);
         let name = block;
         let controllerNames = [];
         if (block.indexOf(':')>-1) {
@@ -36,6 +46,7 @@ class Block {
             name = div.shift();
             controllerNames = div;
         }
+        if (!name) return false;
         return { name, controllerNames }
     }
 
