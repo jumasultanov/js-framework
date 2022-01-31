@@ -5,7 +5,7 @@ class Directives {
     static $dep;
 
     static methodExpression = /^([a-z][\w\.]+)(\(.*\)){0,1}$/i;
-    
+
     static exec(methodName, el, name, val, ctx) {
         if (methodName) {
             let method = this[methodName];
@@ -18,23 +18,31 @@ class Directives {
         return false;
     }
 
-    static expr(expr, ctx, data, check = true, callback) {
+    /**
+     * Инициализация выражения в Dependency
+     * @param {string} expr Выражение
+     * @param {object} data Данные выражения
+     * @param {object} ctx Область данных
+     * @param {boolean} disactivable Отключаемая функция в Dependency
+     * @param {function|null} callback Функция, которая выполняется после изменения выражения
+     */
+    static expr(expr, data, ctx, disactivable = false, callback = null) {
         this.$dep = () => {
             let val = call(expr, ctx);
-            if (check) {
-                if (data.current !== val) {
-                    data.current = val;
-                    data.changed = true;
-                    if (callback) callback();
-                } else {
-                    data.changed = false;
-                }
-            } else delete data.changed;
-            return val;
+            if (data.transform) val = data.transform(val);
+            if (data.current !== val) {
+                data.current = val;
+                if (callback) callback();
+            }
         }
-        let result = this.$dep();
+        if (disactivable) {
+            this.$dep = { 
+                func: this.$dep,
+                use: data
+            };
+            this.$dep.func();
+        } else this.$dep();
         this.$dep = undefined;
-        return result;
     }
 
     /**
@@ -72,51 +80,6 @@ class Directives {
             if (method) return call(`${method}.call(this, ${args.substring(1, args.length - 1)})`, ctx);
             return call(val, ctx);
         };
-    }
-
-    static bind(el, name, val, ctx) {
-        if (!val) val = "''";
-        console.log(val, ctx);
-        console.log(el, name);
-        el.setAttribute(name, call(val, ctx));
-    }
-
-    static bindClass(el, name, val, ctx) {
-        /**
-         * TODO: 
-         */
-        //el.setAttribute('class', [].concat(result).join(' '));
-    }
-
-    static bindStyle(el, name, val, ctx) {
-        /**
-         * TODO:
-         */
-        //el.removeAttribute('style');
-        //for (const k in result) el.style[k] = result[k];
-    }
-
-    static prop(el, name, val, ctx) {
-        if (name in el) el[name] = call(val, ctx);
-    }
-
-    static text(el, _, val, ctx) {
-        el.textContent = call(val, ctx);
-    }
-
-    static html(el, _, val, ctx) {
-        el.innerHTML = call(val, ctx);
-    }
-
-    static if(el, _, val, ctx) {
-        let success = call(val, ctx);
-        if (success) {
-            //if (!el.parentElement) 
-            //TODO: найти род.элемент при построении virt.DOM
-        } else {
-            el.parentElement.replaceChild(new Comment(), el);
-            return false;
-        }
     }
 
     static for() {

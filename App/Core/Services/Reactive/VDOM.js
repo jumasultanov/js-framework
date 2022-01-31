@@ -2,6 +2,8 @@ class VDOM {
 
     //Список конструкции VNode
     items = [];
+    //Флаг активности
+    enabled = false;
 
     /**
      * Добавляем массив VNode в список
@@ -14,17 +16,19 @@ class VDOM {
     }
 
     /**
+     * Активна ли реактивность
+     * @returns {boolean}
+     */
+    isActive() {
+        return this.enabled;
+    }
+
+    /**
      * Запуск реактивности
      */
     enableReactive() {
-        /**
-         * TODO:
-         *      + данные реактивны
-         *      + виртуальный DOM готов
-         *      - написать реактивное изменение элементов DOM
-         */
         this.directives(this.items);
-        //this.update(this.items);
+        this.enabled = true;
     }
 
     /**
@@ -38,19 +42,6 @@ class VDOM {
             child.setDirectives();
         });
     }
-
-    /**
-     * Обновление DOM
-     */
-    /*update(children) {
-        if (!children.length) return;
-        children.forEach(child => {
-            let vnode = child.update();
-            if (vnode) {
-                this.update(vnode.children);
-            }
-        });
-    }*/
 
 }
 

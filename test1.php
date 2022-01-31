@@ -8,14 +8,19 @@
                         <p @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <button @click="click">change INNER {{ customVar3 }}</button>
                         
-                        <p m-if="previewText" :data-count="counter">
-                            <i>I:</i><br>
-                            <span m-block="descriptionPreview"><span>Start preview text: {{ previewText }}</span></span>
-                        </p>
-                        <p m-else-if="previewText == 'test'">
+                        <p m-if="counter < 103 || counter > 112" style="color:green">less 103 or more 110: <b>{{ counter }}</b></p>
+                        <p m-else-if="counter < 106 || counter > 110" style="color:blue">less 106 or more 110: <b>{{ counter }}</b></p>
+                        <p m-else style="color:red">more 105: <b>{{ counter }}</b></p>
+
+                        <p m-if="previewText == 'test'">
                             <span>TEST STRING {{ counter }}</span>
                         </p>
+                        <p m-else-if="previewText" :data-count="counter">
+                            <i>I:</i><br>
+                            <span m-block="descriptionPreview:TestController2"><span>Start preview text: {{ previewText }} = {{ desc }}</span></span>
+                        </p>
                         <p m-else>Preview text not found</p>
+                        
                         <p :data-count="counter">COUNTER: {{ counter }}</p>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import { Block, Parser } from './Service.js';
+import { Block, Parser, Log } from './Service.js';
 
 class BaseComponent {
 
@@ -20,8 +20,17 @@ class BaseComponent {
      * @param {Element} parentElement Элемент, откуда начнется поиск компонентов
      */
     static init(parentElement) {
-        this.items = Parser.start(parentElement);
+        try {
+            this.items = Parser.start(parentElement);
+        } catch(err) {
+            Log.send(
+                [`Cannot parse`, err.message],
+                Log.TYPE_ERROR,
+                'Component initialization'
+            );
+        }
         console.log(this.items);
+        window.test = this.items;
         //На случай, когда нет контроллеров currentComplete смещается на -1
         //  и дополнительно вызывется после перебора (на случай синхронного выполнения)
         //Если контроллеры присутствуют, то смещение изчезает
@@ -56,12 +65,30 @@ class BaseComponent {
     }
 
     /**
+     * Создание компонента для элемента
+     * @param {Node} node 
+     * @returns {Component}
+     */
+    static createEmpty(element, name, parentPath = []) {
+        const component = new this({ element, name });
+        component.updatePath(parentPath).build().defineArea();
+        return component;
+    }
+    /**
      * После загрузки всех контроллеров компонентов после обновления дерева
      */
     static completeLoadControllers() {
         this.currentComplete++;
         if (this.currentComplete == this.count) {
-            this.enableAll(this.items);
+            try {
+                this.enableAll(this.items);
+            } catch (err) {
+                Log.send(
+                    [`Cannot enable`, err.message],
+                    Log.TYPE_ERROR,
+                    'Enable reactivity'
+                );
+            }
         }
     }
     
@@ -71,16 +98,40 @@ class BaseComponent {
      */
     static enableAll(items) {
         if (items instanceof Object) {
-            // TODO: пробегаемся по дереву и включаем компонент
-            // По условию что конструкции в родительском компоненте
-            // не блокиует данный компонент
-
-            // TO CONTINUE: Сделать конструкцию IF
             for (const component of Object.values(items)) {
-                component.enable();
-                if (!component.isHidden()) this.enableAll(component.children);
+                this.enable(component);
             }
         }
+    }
+    
+    /**
+     * Деактивируем все компоненты
+     * @param {Object} items Список компонентов
+     */
+    static disableAll(items) {
+        if (items instanceof Object) {
+            for (const component of Object.values(items)) {
+                this.disable(component);
+            }
+        }
+    }
+
+    /**
+     * Активируем компонент и его дочерние компоненты
+     * @param {Component} component 
+     */
+    static enable(component) {
+        component.enable();
+        this.enableAll(component.getChildren());
+    }
+
+    /**
+     * Деактивируем компонент и его дочерние компоненты
+     * @param {Component} component 
+     */
+    static disable(component) {
+        component.disable();
+        this.disableAll(component.getChildren());
     }
 
 }

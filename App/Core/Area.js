@@ -1,4 +1,4 @@
-import { LocalProxy } from './Service.js';
+import { LocalProxy, Dependency } from './Service.js';
 
 class Area {
 
@@ -78,6 +78,7 @@ class Area {
         if (parent) proxy.__proto__ = parent;
         object.proxy = proxy;
         object.vars = vars;
+        if (!parent) Dependency.define(vars);
         //Проход по дочерним объектам
         for (const namespace in object) {
             if (this.reservedWords.has(namespace)) continue;

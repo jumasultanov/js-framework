@@ -1,6 +1,6 @@
 import BaseComponent from './BaseComponent.js';
 import Area from "./Area.js";
-import { Log, Parser } from './Service.js';
+import { Log, Parser, Block, Dependency } from './Service.js';
 import { AppConfig } from '../config.js';
 
 class Component extends BaseComponent {
@@ -23,8 +23,10 @@ class Component extends BaseComponent {
     vdom;
     //Данные(переменные) блока
     vars;
-    //Флаг отображения
-    hidden = false;
+    //Флаг активности
+    enabled = false;
+    //Объект зависимых полей и их функции для геттеров и сеттеров прокси
+    dependency;
 
     constructor(data) {
         super();
@@ -50,7 +52,25 @@ class Component extends BaseComponent {
         let { proxy, vars } = Area.find(this.path);
         this.vars = proxy;
         this.controllers.forEach(controller => controller.mergeTo(vars));
+        //Для объекта данных делаем предустановки для зависимостей прокси
+        Dependency.define(vars, this);
         return this;
+    }
+
+    /**
+     * Возвращает объект Dependency
+     * @returns {Dependency}
+     */
+    getDependency() {
+        return this.dependency;
+    }
+
+    /**
+     * Устанавливает для компонента объект Dependency
+     * @param {Dependency} dependency 
+     */
+    setDependency(dependency) {
+        this.dependency = dependency;
     }
 
     /**
@@ -71,19 +91,38 @@ class Component extends BaseComponent {
     }
 
     /**
-     * Скрытый компонент
-     * @returns {boolean}
+     * Возвращает дочерние компоненты
+     * @returns {object}
      */
-    isHidden() {
-        return this.hidden;
+    getChildren() {
+        return this.children;
     }
 
     /**
-     * Видимость компонента
-     * @param {boolean} view 
+     * Обновляет дочерние элементы с выводом в DOM
+     * @param {Component[]} components 
+     * @returns {this}
      */
-    display(view = true) {
-        this.hidden = !view;
+    updateChildren(components, vnode) {
+        //Удаляем то, что было вставлено
+        if (!(vnode.data.inserted instanceof Array)) vnode.data.inserted = [];
+        for (const component of vnode.data.inserted) {
+            delete this.children[component.name];
+            //Удаляем элементы из DOM
+            Block.remove(component.element);
+            //Выключаем
+            Component.disable(component);
+        }
+        //Собираем элементы и добавляем дочерние компоненты
+        for (const component of components) {
+            this.children[component.name] = component;
+            //Добавляем в DOM
+            Block.insert(component.element, vnode.data.space);
+            //Запускаем
+            Component.enable(component);
+        }
+        vnode.data.inserted = components;
+        return this;
     }
 
     /**
@@ -97,10 +136,12 @@ class Component extends BaseComponent {
     /**
      * Обновляем путь компонента
      * @param {string[]} parentPath Родительский путь
+     * @return {this}
      */
     updatePath(parentPath = []) {
-        this.path = [...parentPath];
+        this.path = parentPath.filter(item => !item.startsWith('#'));
         this.path.push(this.name);
+        return this;
     }
 
     /**
@@ -160,18 +201,32 @@ class Component extends BaseComponent {
     }
 
     /**
+     * Активность компонента
+     * @returns {boolean}
+     */
+    isActive() {
+        return this.enabled;
+    }
+
+    /**
      * Активация компонента
      */
     enable() {
-        //Включаем реактивность и обновляем DOM
-        this.vdom.enableReactive();
+        if (this.enabled) return;
+        console.log('ENABLE', this.path);
+        if (!this.vdom.isActive()) {
+            this.vdom.enableReactive();
+        }
+        this.enabled = true;
     }
-
+    
     /**
      * Деактивация компонента
      */
     disable() {
-        // TODO: 
+        if (!this.enabled) return;
+        console.log('DISABLE', this.path);
+        this.enabled = false;
     }
 
 }

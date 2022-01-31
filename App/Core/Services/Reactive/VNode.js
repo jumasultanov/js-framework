@@ -91,34 +91,21 @@ class VNode {
      * @returns {VNode|null}
      */
     setDirectives() {
-        let result = this;
         if (this.isText) {
             this.setText();
+        } else if (this.isConstr) {
+            this.setConstr();
         } else {
-            this.ignoreSet = false;
-            if (this.isConstr) {
-                result = this.tryConstr();
-            }
-            if (!this.ignoreSet) {
-                this.setEvents();
-                this.setAttributes();
-                this.setStyles();
-                this.setClasses();
-                this.setProperties();
-            }
+            this.setEvents();
+            this.setAttributes();
+            this.setStyles();
+            this.setClasses();
+            this.setProperties();
         }
-        return result;
     }
 
     /**
-     * Обновляем DOM для элемента
-     */
-    /*update() {
-
-    }*/
-
-    /**
-     * 
+     * Установка событии
      */
     setEvents() {
         for (const name in this.data.on) {
@@ -128,23 +115,19 @@ class VNode {
     }
 
     /**
-     * 
+     * Установка атрибутов
      */
     setAttributes() {
-        // TO CONTINUE: 
-        // Сделать обновление после реактивного изменения
-        // Рассмотреть вариант, когда массовое изменение или рекурсивное изменение
-        // не должно обрабатываться несколько раз
         for (const name in this.data.attrs) {
             const data = this.data.attrs[name];
-            Directives.expr(data.expr, this.getVars(), data, true, () => {
+            Directives.expr(data.expr, data, this.getVars(), false, () => {
                 this.node.attr(name, data.current);
             });
         }
     }
 
     /**
-     * 
+     * Установка стилей
      */
     setStyles() {
         /*for (const name in this.data.style) {
@@ -154,7 +137,7 @@ class VNode {
     }
 
     /**
-     * 
+     * Установка классов
      */
     setClasses() {
         /*for (const name in this.data.class) {
@@ -164,7 +147,7 @@ class VNode {
     }
 
     /**
-     * 
+     * Установка свойств
      */
     setProperties() {
         /*for (const name in this.data.props) {
@@ -174,50 +157,93 @@ class VNode {
     }
 
     /**
-     * 
+     * Установка текста
      */
     setText() {
         let data = this.data;
-        Directives.expr(data.expr, this.getVars(), data, true, () => {
+        Directives.expr(data.expr, data, this.getVars(), false, () => {
             this.node.text(data.current);
         });
     }
 
     /**
-     * 
-     * @returns {VNode|null}
+     * Выполняем конструкции
      */
-    tryConstr() {
-        if (this.isConstr) {
-            //Условия
-            if (this.data.constr.if) return this.constrIf();
-            if (this.data.constr['else-if']) return this.constrIf(true);
-            //Циклы
-            //if (this.data.constr.for) return this.constrFor();
-            // TODO: другие конструкции
-        }
-        return this;
+    setConstr() {
+        //Условия
+        if (this.data.constr.if) this.constrIf();
+        //Циклы
+        //if (this.data.constr.for) return this.constrFor();
+        // TODO: другие конструкции
     }
 
     /**
-     * 
-     * @param {boolean} next 
-     * @returns {VNode|null}
+     * Выполнение конструкции IF
+     * @param {boolean} next Имя следующего блока конструкции
      */
-    constrIf(next = false) {
-        this.ignoreSet = true;
-        let data = next ? this.data.constr['else-if'] : this.data.constr.if;
-        let success = !!Directives.expr(data.expr, this.getVars(), data);
-        data.current = success;
-        if (success) {
-            
-            return this;
+    constrIf(next = 'if') {
+        //Получаем данные
+        let data = this.data.constr[next];
+        //Если дошли до ELSE, то без проверок выполняем вставку
+        if (data.name == 'else') {
+            this.component.updateChildren([data.component], this);
+        } else {
+            //Флаг добавленности в Dependency, первый раз при изменении
+            let used = false;
+            //Выполнение выражения для условия
+            Directives.expr(data.expr, data, this.getVars(), true, () => {
+                //Если истинно,
+                // то деактивируем функции в Dependency в последующих блоках конструкции и вставляем блок в DOM
+                if (data.current) {
+                    if (data.next) this.constrIfNextActive(data.next, false);
+                    this.component.updateChildren([data.component], this);
+                } else {
+                    if (data.next) {
+                        if (used) {
+                            //Активируем следующие функции в Dependency в последующих блоках конструкции
+                            this.constrIfNextActive(data.next);
+                        } else {
+                            //Впервые дошли до выполнения следующего условия конструкции
+                            used = true;
+                            this.constrIf(data.next);
+                        }
+                    } else {
+                        //Пустой блок, если ни одно условие не выполнилось и нет ELSE
+                        this.component.updateChildren([], this);
+                    }
+                }
+            });
         }
-        if (data.next instanceof VNode) {
-            data.next.setDirectives();
-            return data.next;
+    }
+
+    /**
+     * Преобразование значении для условии IF
+     * @param {any} value Значение
+     * @returns {boolean}
+     */
+    static transformIf(value) {
+        return !!value;
+    }
+
+    /**
+     * Изменение активности функции в Dependency
+     * @param {string} next Имя следующего блока конструкции
+     * @param {boolean} enable Включить или отключить
+     */
+    constrIfNextActive(next, enable = true) {
+        let data = this.data.constr[next];
+        //Значение изменяем
+        if (enable) data.current = false;
+        if ('dependencies' in data) {
+            for (const prop in data.dependencies) {
+                //После проверок перебираем и изменяем активность функции
+                for (const index of data.dependencies[prop]) {
+                    this.component.dependency.setActive(prop, index, enable);
+                }
+            }
         }
-        return null;
+        //Проходимся по следующим блокам
+        if (data.next) this.constrIfNextActive(data.next, enable);
     }
 
     /**
@@ -239,7 +265,7 @@ class VNode {
             }
             data.vars = vars;
         }
-        let val = Directives.expr(expr, this.getVars(), data, false);
+        let val = Directives.expr(expr, data, this.getVars(), false);
         this.updateChildren(val);
         console.log(this);
         return this;

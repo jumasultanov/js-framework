@@ -10,6 +10,7 @@ class Parser {
     node;
     vdom;
     component;
+    constrCount = 0;
 
     constructor(node, component) {
         this.node = node;
@@ -109,7 +110,6 @@ class Parser {
         //Перебор атрибутов
         cycleAttrs:
         for (const {name, value} of node.attributes) {
-            if (name == AppConfig.componentAttr) continue;
             let f, $name;
             if (name.startsWith('m-')) f = '#';
             else f = name.substr(0, 1);
@@ -135,13 +135,17 @@ class Parser {
                     else result.attrs[$name] = { expr: value };
                     break;
                 //Конструкции
-                /*case '#':
+                case '#':
                     construction = name.substr(2);
                     result.constr[construction] = { expr: value };
                     const obj = result.constr[construction];
+                    const componentName = `#construction:${this.getConstrCount()}`;
                     switch (construction) {
                         //Активные выражения, которые заменяются на коммент
                         case 'if':
+                            //Указываем трансформацию значении
+                            obj.transform = VNode.transformIf;
+                            //Собираем и сохраняем последующие блоки конструкции
                             let list = {};
                             const next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
                             obj.next = next;
@@ -152,12 +156,13 @@ class Parser {
                     }
                     node.removeAttribute(name);
                     //Заменяем на пустой коммент
-                    result.space = this.replaceBlock(node);
-                    //Создаем компонент
-                    obj.component = this.createComponent(node);
+                    result.space = Block.replaceOnComment(node);
+                    //Указываем элемент замененного блока, откуда продолжится парсинг
                     breakpoint = result.space;
+                    //Создаем компонент
+                    obj.component = Component.createEmpty(node, componentName, this.component.getPath());
                     rmv = [];
-                    break cycleAttrs;*/
+                    break cycleAttrs;
                 default:
                     continue;
             }
@@ -182,45 +187,24 @@ class Parser {
         if (node.nodeType != Node.ELEMENT_NODE) return null;
         for (const attr of attrs) {
             if (!node.hasAttribute(attr)) continue;
+            //Указываем имена для связки
+            const number = this.getConstrCount();
+            const name = attr.substr(2);
+            const uniqueName = `${name}-${number}`;
+            const componentName = `#construction:${number}`;
             //Сразу проверяем следующий элмент
             const next = this.unionNodes(node.nextElementSibling, attrs, list);
             //Готовим элемент к транспортировке
             node.parentNode.removeChild(node);
             const expr = node.getAttribute(attr);
             node.removeAttribute(attr);
-            //Указываем имя для связки
-            const name = attr.substr(2);
-            const uniqueName = name + '-' + Object.keys(list).length;
             list[uniqueName] = {
                 next, name, expr,
-                component: this.createComponent(node)
+                component: Component.createEmpty(node, componentName, this.component.getPath())
             };
             return uniqueName;
         }
         return null;
-    }
-
-    /**
-     * Создание компонента для элемента
-     * @param {Node} node 
-     * @returns {Component}
-     */
-    createComponent(node) {
-        const component = new Component({ element: node, name: '#' });
-        component.build();
-        component.display(false);
-        return component;
-    }
-
-    /**
-     * Заменяет элемент HTML-комментарием и возвращает его
-     * @param {Node} node 
-     * @returns {Comment}
-     */
-    replaceBlock(node) {
-        const space = new Comment();
-        node.parentNode.replaceChild(space, node);
-        return space;
     }
     
     /**
@@ -254,6 +238,15 @@ class Parser {
         for (const text of split) node.parentNode.insertBefore(text, node);
         node.parentNode.removeChild(node);
         return {nodes: newNodes, breakpoint: split[split.length - 1]};
+    }
+
+    /**
+     * Счетчик для динамических компонентов, которые управляются условиями
+     * @returns {number}
+     */
+    getConstrCount() {
+        this.constrCount++;
+        return this.constrCount;
     }
     
 }

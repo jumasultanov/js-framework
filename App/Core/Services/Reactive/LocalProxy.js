@@ -1,9 +1,6 @@
 import Directives from './Directives.js';
 
 class LocalProxy {
-
-    static deps = {};
-    //static counter = 0;
     
     /**
      * Возвращает прокси для объекта
@@ -28,13 +25,21 @@ class LocalProxy {
     }
 
     static get(target, prop, receiver) {
-        if (typeof prop != 'symbol') {
-            // TODO: Продумать ловлю изменении в конкретном месте относительно virtual DOM,
-            //       который надо будет сделать
-            if (Directives.$dep) {
-                console.log(`GET ${prop}`);
-                if (!this.deps[prop]) this.deps[prop] = [];
-                this.deps[prop].push(Directives.$dep);
+        //if (typeof prop === 'symbol') return false;
+        if (typeof prop !== 'symbol' && Directives.$dep) {
+            //Добавляем слушатель в данных компонента, в котором вызвали свойство
+            //т.е. при первом попадании сюда
+            if (!this.isUsedOrigin) {
+                this.isUsedOrigin = true;
+                if (Directives.$dep instanceof Function) {
+                    target.getHandler().add(prop, Directives.$dep);
+                } else if (Directives.$dep instanceof Object) {
+                    target.getHandler().add(prop, Directives.$dep.func, Directives.$dep.use);
+                }
+            }
+            //Если дошли до объекта, где содержится это свойство, то убираем флаг
+            if (target.hasOwnProperty(prop)) {
+                this.isUsedOrigin = false;
             }
         }
         return Reflect.get(target, prop, receiver);
@@ -43,24 +48,17 @@ class LocalProxy {
     static set(target, prop, val, receiver) {
         //Для установки радительского Proxy объекта
         if (prop == '__proto__') {
-            /*console.warn('SET PROTO');
-            console.warn('TARGET', target);
-            console.warn('VALUE', val);
-            console.warn('RC', receiver);*/
+            //Когда собирается прокси дерево объектов
             target.__proto__ = val;
             return true;
         }
-        //console.log(prop, target);
-        if (target.hasOwnProperty([prop])) {
-            // TODO: 
-            Reflect.set(target, prop, val, receiver);
-            if (this.deps[prop]) {
-                console.log(`SET ${prop} = ${val}`);
-                for (const dep of this.deps[prop]) dep(val);
-            }
-            return true;
-        } else {
-            //return Reflect.set(target.__proto__, prop, val);
+        //Если изменилось настоящее свойство объекта, то проверку проходит
+        if (target.hasOwnProperty(prop)) {
+            const result = Reflect.set(target, prop, val, receiver);
+            //Выполняем все функции зависимости (слушатели прокси)
+            if (result) target.getHandler().call(prop);
+            return result;
+        } else { //Иначе изменяем в родительском объекте, пока не дойдем до свойства
             target.__proto__[prop] = val;
         }
         return true;

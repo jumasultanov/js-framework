@@ -16,11 +16,9 @@
             },
             content: {
                 vars: {
-                    //counter: 100,
                 },
                 description: {
                     vars: {
-                        //counter: 100,
                         previewText: 'Simple description for this text'
                     }
                 },

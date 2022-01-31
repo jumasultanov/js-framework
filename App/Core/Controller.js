@@ -1,3 +1,5 @@
+import { Helper } from './Service.js';
+
 class Controller {
 
     //Игнорируемые методы
@@ -25,19 +27,15 @@ class Controller {
         for (let prop of Object.getOwnPropertyNames(this)) {
             //Пропускаем, если есть в целевом объекте
             if (target.hasOwnProperty(prop)) continue;
-            Object.defineProperty(target, prop, Controller.getDescriptor(this[prop]));
+            Object.defineProperty(target, prop, Helper.getDescriptor(this[prop]));
         }
         for (let method of Object.getOwnPropertyNames(this.__proto__)) {
             //Игнорируем зарезервированные методы
             if (Controller.mergeIgnored.has(method)) continue;
             //Пропускаем, если есть в целевом объекте
             if (target.hasOwnProperty(method)) continue;
-            Object.defineProperty(target, method, Controller.getDescriptor(this[method]));
+            Object.defineProperty(target, method, Helper.getDescriptor(this[method]));
         }
-    }
-
-    static getDescriptor(value, configurable = true, writable = true, enumerable = true) {
-        return { value, configurable, writable, enumerable }
     }
 
 }

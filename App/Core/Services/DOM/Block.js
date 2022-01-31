@@ -50,6 +50,34 @@ class Block {
         return { name, controllerNames }
     }
 
+    /**
+     * Заменяет элемент HTML-комментарием и возвращает его
+     * @param {Node} node 
+     * @returns {Comment}
+     */
+    static replaceOnComment(node) {
+        const space = new Comment();
+        node.parentNode.replaceChild(space, node);
+        return space;
+    }
+
+    /**
+     * Удаление элемента
+     * @param {Node} remove Удаляемый элемент
+     */
+    static remove(remove) {
+        remove.remove();
+    }
+
+    /**
+     * Вставка элемента
+     * @param {Node} insert Вставляемые элемент
+     * @param {Node} savePoint Вставка до этого элемента
+     */
+    static insert(insert, savePoint) {
+        savePoint.parentElement.insertBefore(insert, savePoint);
+    }
+
 }
 
 export default Block
