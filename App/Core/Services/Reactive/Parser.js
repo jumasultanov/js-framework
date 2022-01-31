@@ -105,8 +105,7 @@ class Parser {
         let result = VNode.getEmptyData();
         let rmv = [];
         let breakpoint = node;
-        //let isTemplate = node.tagName == 'TEMPLATE';
-        let construction;
+        let isConstr = false;
         //Перебор атрибутов
         cycleAttrs:
         for (const {name, value} of node.attributes) {
@@ -136,31 +135,11 @@ class Parser {
                     break;
                 //Конструкции
                 case '#':
-                    construction = name.substr(2);
-                    result.constr[construction] = { expr: value };
-                    const obj = result.constr[construction];
-                    const componentName = `#construction:${this.getConstrCount()}`;
-                    switch (construction) {
-                        //Активные выражения, которые заменяются на коммент
-                        case 'if':
-                            //Указываем трансформацию значении
-                            obj.transform = VNode.transformIf;
-                            //Собираем и сохраняем последующие блоки конструкции
-                            let list = {};
-                            const next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
-                            obj.next = next;
-                            Object.assign(result.constr, list);
-                        //case 'for':
-                            //
-                            //break;
-                    }
-                    node.removeAttribute(name);
-                    //Заменяем на пустой коммент
-                    result.space = Block.replaceOnComment(node);
+                    isConstr = true;
+                    //Выполняем разбор
+                    this.setConstructions(node, name, value, result);
                     //Указываем элемент замененного блока, откуда продолжится парсинг
                     breakpoint = result.space;
-                    //Создаем компонент
-                    obj.component = Component.createEmpty(node, componentName, this.component.getPath());
                     rmv = [];
                     break cycleAttrs;
                 default:
@@ -168,11 +147,45 @@ class Parser {
             }
             rmv.push(name);
         }
-        if (!construction && !rmv.length) return null;
+        if (!isConstr && !rmv.length) return null;
         //Удаляем атрибуты
         for (const name of rmv) node.removeAttribute(name);
         // Возвращаем VNode[] и элемент, с которого продолжится парсинг
         return {nodes: [new VNode(node, this.component, result)], breakpoint };
+    }
+
+    /**
+     * Разбираем атрибут элемента на конструкцию
+     * @param {Node} node Элемент
+     * @param {string} attr Название атрибута
+     * @param {string} value Значение атрибута
+     * @param {object} save Объект для хранения изменении
+     */
+    setConstructions(node, attr, value, save) {
+        //Формируем базовые данные для всех конструкции
+        const construction = attr.substr(2);
+        save.constr[construction] = { expr: value };
+        const obj = save.constr[construction];
+        const componentName = `#construction:${this.getConstrCount()}`;
+        switch (construction) {
+            //Активные выражения, которые заменяются на коммент
+            case 'if':
+                //Указываем трансформацию значении
+                obj.transform = VNode.transformIf;
+                //Собираем и сохраняем последующие блоки конструкции
+                let list = {};
+                const next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
+                obj.next = next;
+                Object.assign(save.constr, list);
+            case 'for':
+                //
+                break;
+        }
+        node.removeAttribute(attr);
+        //Заменяем на пустой коммент
+        save.space = Block.replaceOnComment(node);
+        //Создаем компонент
+        obj.component = Component.createEmpty(node, componentName, this.component.getPath());
     }
 
     /**

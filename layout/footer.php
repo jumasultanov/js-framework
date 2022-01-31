@@ -25,7 +25,15 @@
                 author: {
                     vars: {
                         author: 'Unknown',
-                        prof: 'Manager'
+                        prof: 'Manager',
+                        users: [
+                            {id: 1, name: 'Ivan'},
+                            {id: 2, name: 'John'},
+                            {id: 3, name: 'Lisa'},
+                            {id: 4, name: 'Kate'},
+                            {id: 5, name: 'Scarlet'},
+                            {id: 6, name: 'Piter'},
+                        ]
                     }
                 }
             }
