@@ -21,7 +21,10 @@ class VNode {
         this.node = new NodeElement(node);
         this.component = component;
         this.isText = this.node.isText();
-        if (Object.keys(data.constr||{}).length) this.isConstr = true;
+        if (Object.keys(data.constr||{}).length) {
+            this.isConstr = true;
+            data.inserted = new Set();
+        }
         if (data.listExtension) this.isListItem = true;
         this.data = data;
     }
@@ -173,7 +176,7 @@ class VNode {
         //Условия
         if (this.data.constr.if) this.constrIf();
         //Циклы
-        //if (this.data.constr.for) return this.constrFor();
+        if (this.data.constr.for) return this.constrFor();
         // TODO: другие конструкции
     }
 
@@ -186,7 +189,7 @@ class VNode {
         let data = this.data.constr[next];
         //Если дошли до ELSE, то без проверок выполняем вставку
         if (data.name == 'else') {
-            this.component.updateChildren([data.component], this);
+            this.component.replaceChildren([data.component], this.data.space, this.data.inserted);
         } else {
             //Флаг добавленности в Dependency, первый раз при изменении
             let used = false;
@@ -196,7 +199,7 @@ class VNode {
                 // то деактивируем функции в Dependency в последующих блоках конструкции и вставляем блок в DOM
                 if (data.current) {
                     if (data.next) this.constrIfNextActive(data.next, false);
-                    this.component.updateChildren([data.component], this);
+                    this.component.replaceChildren([data.component], this.data.space, this.data.inserted);
                 } else {
                     if (data.next) {
                         if (used) {
@@ -209,7 +212,7 @@ class VNode {
                         }
                     } else {
                         //Пустой блок, если ни одно условие не выполнилось и нет ELSE
-                        this.component.updateChildren([], this);
+                        this.component.replaceChildren([], this.data.space, this.data.inserted);
                     }
                 }
             });
@@ -251,23 +254,23 @@ class VNode {
      * @returns {VNode}
      */
     constrFor() {
-        this.ignoreSet = true;
         let data = this.data.constr.for;
-        let expr = data.expr;
-        let vars = data.vars;
-        if (!vars) {
-            if (expr.indexOf(' in ') < 0) {
-                vars = [];
-            } else {
-                [vars, expr] = expr.split(' in ');
-                vars = vars.replace(/[\(\)\s]/g, '').split(',');
-                data.expr = expr;
+        //Выполнение выражения для цикла
+        Directives.expr(data.expr, data, this.getVars(), false, () => {
+            if (data.current instanceof Object) {
+                let keys = Object.keys(data.current);
+                if (keys.length) {
+                    for (const key of keys) {
+                        console.log(data.current[key]);
+                        //this.component.updateChildren([data.component], this);
+                    }
+                } else if (data.next) {
+                    //Если нет данных в списке, то выполняем конструкцию ELSE
+                    const empty = this.data.constr[data.next];
+                    this.component.replaceChildren([empty.component], this.data.space, this.data.inserted);
+                }
             }
-            data.vars = vars;
-        }
-        let val = Directives.expr(expr, data, this.getVars(), false);
-        this.updateChildren(val);
-        console.log(this);
+        });
         return this;
     }
 

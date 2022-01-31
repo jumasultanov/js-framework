@@ -99,30 +99,45 @@ class Component extends BaseComponent {
     }
 
     /**
-     * Обновляет дочерние элементы с выводом в DOM
-     * @param {Component[]} components 
-     * @returns {this}
+     * Заменяет дочерние элементы с выводом в DOM
+     * @param {Component[]} components Компоненты, которые нужно вставить
+     * @param {Node} savePoint Элемент, перед которым вставится
+     * @param {Set} inserted Список уже вставленных компонентов
      */
-    updateChildren(components, vnode) {
+    replaceChildren(components, savePoint, inserted) {
         //Удаляем то, что было вставлено
-        if (!(vnode.data.inserted instanceof Array)) vnode.data.inserted = [];
-        for (const component of vnode.data.inserted) {
-            delete this.children[component.name];
-            //Удаляем элементы из DOM
-            Block.remove(component.element);
-            //Выключаем
-            Component.disable(component);
-        }
+        for (const component of inserted) this.removeChild(component, inserted);
         //Собираем элементы и добавляем дочерние компоненты
-        for (const component of components) {
-            this.children[component.name] = component;
-            //Добавляем в DOM
-            Block.insert(component.element, vnode.data.space);
-            //Запускаем
-            Component.enable(component);
-        }
-        vnode.data.inserted = components;
-        return this;
+        for (const component of components) this.insertChild(component, savePoint, inserted);
+    }
+
+    /**
+     * Добавляет дочерний компонент с выводом в DOM
+     * @param {Component} component Вставляемый компонент
+     * @param {Node} savePoint Элемент, перед которым вставится
+     * @param {Set} inserted Список уже вставленных компонентов 
+     */
+    insertChild(component, savePoint, inserted) {
+        this.children[component.name] = component;
+        inserted.add(component);
+        //Добавляем в DOM
+        Block.insert(component.element, savePoint);
+        //Запускаем
+        Component.enable(component);
+    }
+
+    /**
+     * Удаляет дочерний компонент с удалением из DOM
+     * @param {Component} component Удаляемый компонент
+     * @param {Set} inserted Список уже вставленных компонентов
+     */
+    removeChild(component, inserted) {
+        delete this.children[component.name];
+        inserted.delete(component);
+        //Удаляем элементы из DOM
+        Block.remove(component.element);
+        //Выключаем
+        Component.disable(component);
     }
 
     /**

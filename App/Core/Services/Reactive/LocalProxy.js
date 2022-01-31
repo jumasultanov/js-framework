@@ -25,7 +25,6 @@ class LocalProxy {
     }
 
     static get(target, prop, receiver) {
-        //if (typeof prop === 'symbol') return false;
         if (typeof prop !== 'symbol' && Directives.$dep) {
             //Добавляем слушатель в данных компонента, в котором вызвали свойство
             //т.е. при первом попадании сюда

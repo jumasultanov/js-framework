@@ -164,23 +164,38 @@ class Parser {
     setConstructions(node, attr, value, save) {
         //Формируем базовые данные для всех конструкции
         const construction = attr.substr(2);
-        save.constr[construction] = { expr: value };
+        save.constr[construction] = {};
         const obj = save.constr[construction];
         const componentName = `#construction:${this.getConstrCount()}`;
+        let list = {};
+        let next;
         switch (construction) {
             //Активные выражения, которые заменяются на коммент
             case 'if':
                 //Указываем трансформацию значении
                 obj.transform = VNode.transformIf;
                 //Собираем и сохраняем последующие блоки конструкции
-                let list = {};
-                const next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
-                obj.next = next;
-                Object.assign(save.constr, list);
+                next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
+                break;
             case 'for':
-                //
+                //Деление выражения конструкции
+                //на названия переменных в цикле и название в объекте данных, который перебирается
+                let as = [];
+                if (value.indexOf(' in ') != -1) {
+                    [as, value] = value.split(' in ');
+                    as = as.replace(/[\(\)\s]/g, '').split(',');
+                }
+                obj.as = as;
+                //Собираем и сохраняем последующие блоки конструкции
+                next = this.unionNodes(node.nextElementSibling, ['m-for-else'], list);
                 break;
         }
+        //Сохраняем связанные конструкции
+        if (next) obj.next = next;
+        Object.assign(save.constr, list);
+        //Сохарняем выражение здесь, конструкция могла ее изменить
+        obj.expr = value;
+        //Удаляем атрибут
         node.removeAttribute(attr);
         //Заменяем на пустой коммент
         save.space = Block.replaceOnComment(node);

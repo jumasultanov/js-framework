@@ -35,11 +35,14 @@
                     </div>
                     <div class="mb-5" m-block="users">
                         <ul>
-                            <li m-for="user in users">
+                            <li m-for="(user, userIndex, usersArray) in users">
                                 <p style="backgound-color:#fefefe;">
                                     <span>ID: {{ user.id }}</span><br>
                                     <span>Name: {{ user.name }}</span>
                                 </p>
+                            </li>
+                            <li m-for-else>
+                                <p style="color:#f66;font-weight:bold;">Users not found</p>
                             </li>
                         </ul>
                     </div>
