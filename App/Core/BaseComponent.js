@@ -11,8 +11,15 @@ class BaseComponent {
      * 
      * @param {*} path 
      */
-    static getComponent(path) {
-        // TODO: 
+    static find(path) {
+        if (!(path instanceof Array) || !path.length) return null;
+        let current = this.items[path[0]];
+        if (!current) return null;
+        for (let i = 1; i < path.length; i++) {
+            if (!(path[i] in current.children)) return null;
+            current = current.children[path[i]];
+        }
+        return current;
     }
 
     /**
@@ -66,12 +73,17 @@ class BaseComponent {
 
     /**
      * Создание компонента для элемента
-     * @param {Node} node 
+     * @param {Node} node Node-элемент
+     * @param {string} name Название
+     * @param {string[]} parentPath Путь родительского компонента 
+     * @param {boolean} ready Предстартовые установки (парсинг элемента и определение данных)
+     * @param {object|null} defaultVars Доп. данные
      * @returns {Component}
      */
-    static createEmpty(element, name, parentPath = []) {
+    static createEmpty(element, name, parentPath = [], ready = true, defaultVars = null) {
         const component = new this({ element, name });
-        component.updatePath(parentPath).build().defineArea();
+        component.updatePath(parentPath);
+        if (ready) component.build().defineArea(defaultVars);
         return component;
     }
     /**

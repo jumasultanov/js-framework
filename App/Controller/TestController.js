@@ -46,6 +46,27 @@ class TestController extends Controller {
         console.log(value, old);
     }
 
+    addUser() {
+        this.users.push({id: 7, name: 'Jessica'});
+    }
+
+    changeUser(index) {
+        //this.users[index] = {id: -1, name: 'Mary'};
+        this.users[index].name = 'Mary';
+        this.userIndex = 99;
+        console.log(this);
+    }
+
+    removeUser(index) {
+        console.log('----- click delete user');
+        console.log(index, this.users);
+        this.users.splice(index, 1);
+    }
+
+    replaceUser(index) {
+        this.users.splice(index, 2, {id: 8, name: 'Sam'});
+    }
+
 }
 
 export default TestController

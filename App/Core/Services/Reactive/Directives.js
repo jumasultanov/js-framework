@@ -3,15 +3,18 @@ const call = (expr, ctx) => new Function(`with(this){${`return ${expr}`}}`).bind
 class Directives {
 
     static $dep;
+    static collectParams = { collect: true };
 
     static methodExpression = /^([a-z][\w\.]+)(\(.*\)){0,1}$/i;
 
     static exec(methodName, el, name, val, ctx) {
         if (methodName) {
             let method = this[methodName];
-            this.$dep = () => method(el, name, val, ctx);
-            let result = this.$dep();
-            this.$dep = undefined;
+            // TODO: Надо будет разобрать события, т.к. пока только они сюда попадают
+            //      Изменил $dep1, т.к. иначе они записываются в зависимости, а это не нужно
+            this.$dep1 = () => method(el, name, val, ctx);
+            let result = this.$dep1();
+            this.$dep1 = undefined;
             if (typeof result == undefined) return true;
             return result;
         }
@@ -27,22 +30,39 @@ class Directives {
      * @param {function|null} callback Функция, которая выполняется после изменения выражения
      */
     static expr(expr, data, ctx, disactivable = false, callback = null) {
-        this.$dep = () => {
+        this.$dep = params => {
             let val = call(expr, ctx);
+            //Если первый раз, то собираем зависимости
+            if (params && params.collect) {
+                console.log('%c%s', 'font-size:1.4em;color:green;padding:3px 0px 3px 10px', 'GET_DEP: '+this.$prop);
+                console.log(this.$target.getHandler());
+                if (this.$dep instanceof Function) {
+                    this.$target.getHandler().add(this.$prop, this.$dep);
+                } else if (this.$dep instanceof Object) {
+                    this.$target.getHandler().add(this.$prop, this.$dep.func, this.$dep.use);
+                }
+                //После выполнения выражения очищаем флаги, чтобы не мешало последующим
+                this.$dep = undefined;
+                this.$prop = undefined;
+                this.$target = undefined;
+            }
+            console.log('%c%s', 'font-size:1.4em;color:#f66;padding:3px 0px 3px 10px;', expr.trim()+' -> '+JSON.stringify(val));
+            //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
-            if (data.current !== val) {
+            //Если изменилось или грубо нужно обновить, изменяем значение и вызываем колбэк
+            if (!('current' in data) || params?.force || data.current !== val) {
                 data.current = val;
-                if (callback) callback();
+                if (callback) callback(params);
             }
         }
+        //Если зависимость может быть отключена, актуально для IF, SWITCH
         if (disactivable) {
             this.$dep = { 
                 func: this.$dep,
                 use: data
             };
-            this.$dep.func();
-        } else this.$dep();
-        this.$dep = undefined;
+            this.$dep.func(this.collectParams);
+        } else this.$dep(this.collectParams);
     }
 
     /**
@@ -80,25 +100,6 @@ class Directives {
             if (method) return call(`${method}.call(this, ${args.substring(1, args.length - 1)})`, ctx);
             return call(val, ctx);
         };
-    }
-
-    static for() {
-        console.log('TEST');
-        // TODO:
-        /* 
-        const items = call(val, ctx);
-        if (!el.$each) {
-            el.$each = el.children[0];
-        }
-        el.innerText = '';
-        for (let it of items) {
-            const childNode = document.importNode(el.$each);
-            const childCtx = {$parent: ctx, $it: it};
-            childNode.$q = childCtx;
-            Q(childNode, childCtx);
-            el.appendChild(childNode);
-        }
-        */
     }
 
     static model() {

@@ -1,6 +1,7 @@
 import Directives from './Directives.js';
 import Component from '../../Component.js';
-import { NodeElement } from '../../Service.js';
+import Area from '../../Area.js';
+import { NodeElement, LocalProxy, InternalProxy } from '../../Service.js';
 
 class VNode {
 
@@ -220,15 +221,6 @@ class VNode {
     }
 
     /**
-     * Преобразование значении для условии IF
-     * @param {any} value Значение
-     * @returns {boolean}
-     */
-    static transformIf(value) {
-        return !!value;
-    }
-
-    /**
      * Изменение активности функции в Dependency
      * @param {string} next Имя следующего блока конструкции
      * @param {boolean} enable Включить или отключить
@@ -255,20 +247,70 @@ class VNode {
      */
     constrFor() {
         let data = this.data.constr.for;
+        console.log(data);
         //Выполнение выражения для цикла
-        Directives.expr(data.expr, data, this.getVars(), false, () => {
+        Directives.expr(data.expr, data, this.getVars(), false, params => {
+            console.warn('ARRAY CHANGE', data);
+            console.warn(params);
+            console.warn(this.component);
             if (data.current instanceof Object) {
-                let keys = Object.keys(data.current);
-                if (keys.length) {
-                    for (const key of keys) {
-                        console.log(data.current[key]);
-                        //this.component.updateChildren([data.component], this);
+                if (params && 'change' in params) {
+                    const key = params.index;
+                    const name = `${data.component.name}:${key}`;
+                    switch (params.change) {
+                        case InternalProxy.ARRAY_PUSH:
+                            console.log('PUSH', key, name);
+                            const insertComp = data.component.clone(name, true, VNode.getObjectForCycle(data, key));
+                            console.log('CLONE');
+                            this.component.insertChild(insertComp, this.data.space, this.data.inserted);
+                            console.log('INSERT CLONE');
+                            return;
+                        case InternalProxy.ARRAY_DELETE:
+                            // TODO: 
+                            //      Надо Нормально отлавливать изменения в массиве
+                            //      то что написал для циклов надо переписать в более производительный вариант
+                            //      учитывать еще перебор объектов
+                            //      Косяк при удалении. т.к. отлавливается всегда последний индекс
+                            //Удаляем компонент из родителя и его данные
+                            const deleteComp = this.component.getChildren()[name];
+                            this.component.removeChild(deleteComp, this.data.inserted);
+                            Area.delete(deleteComp.path);
+                            //Перебираем и изменяет индексы последующих компонентов
+                            let prev = name;
+                            for (let i = +key+1; i < data.current.length; i++) {
+                                const childName = `${data.component.name}:${i}`;
+                                const moveComp = this.component.children[childName];
+                                const oldPath = [...moveComp.path];
+                                moveComp.updateName(prev);
+                                delete this.component.children[childName];
+                                this.component.children[prev] = moveComp;
+                                Area.move(oldPath, [...moveComp.path]);
+                                moveComp.vars[data.as[1]||'key'] = String(i-1);
+                                prev = childName;
+                            }
+                            if (data.current.length > 1) return;
+                            break;
                     }
-                } else if (data.next) {
-                    //Если нет данных в списке, то выполняем конструкцию ELSE
-                    const empty = this.data.constr[data.next];
-                    this.component.replaceChildren([empty.component], this.data.space, this.data.inserted);
+                } else {
+                    //Добавляем скрытый метод getWatcher, которая будет вести до родителя оригинального объекта
+                    const parent = Area.getOwnKey(data.component.path.slice(0, -1), data.expr);
+                    if (parent) InternalProxy.setWatcher(parent.vars, data.expr);
+                    //Обновляем весь список
+                    let keys = Object.keys(data.current);
+                    if (keys.length) {
+                        for (const key of keys) {
+                            const name = `${data.component.name}:${key}`;
+                            const component = data.component.clone(name, true, VNode.getObjectForCycle(data, key));
+                            this.component.insertChild(component, this.data.space, this.data.inserted);
+                        }
+                        return;
+                    }
                 }
+            }
+            if (data.next) {
+                //Если нет данных в списке, то выполняем конструкцию ELSE
+                const empty = this.data.constr[data.next];
+                this.component.replaceChildren([empty.component], this.data.space, this.data.inserted);
             }
         });
         return this;
@@ -288,6 +330,38 @@ class VNode {
             constr: {}, //Конструкции
             space: null, //Замененный коммент на блок
         };
+    }
+
+    /**
+     * Преобразование значении для условии IF
+     * @param {any} value Значение
+     * @returns {boolean}
+     */
+    static transformIf(value) {
+        return !!value;
+    }
+
+    /**
+     * Преобразование значении в текст
+     * @param {any} value Значение
+     * @returns {string}
+     */
+    static transformText(value) {
+        if (typeof value != 'string') {
+            if (value) {
+                if (value instanceof Object) value = JSON.stringify(value);
+                else value = String(value);
+            } else value = '';
+        }
+        return value;
+    }
+
+    static getObjectForCycle(data, key) {
+        const obj = {};
+        obj[data.as[0]||'item'] = data.current[key];
+        obj[data.as[1]||'key'] = key;
+        obj[data.as[2]||'items'] = data.current;
+        return obj;
     }
 
 }

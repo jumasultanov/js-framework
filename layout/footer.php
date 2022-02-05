@@ -16,6 +16,14 @@
             },
             content: {
                 vars: {
+                    users: [
+                        {id: 1, name: 'Ivan', have: { cat: true, dog: true }},
+                        {id: 2, name: 'John', have: { cat: true, dog: true }},
+                        {id: 3, name: 'Lisa', prof: 'manager', have: { cat: true, dog: true }},
+                        {id: 4, name: 'Kate', have: { cat: true, dog: true }},
+                        {id: 5, name: 'Scarlet', have: { cat: true, dog: true }},
+                        {id: 6, name: 'Piter', have: { cat: true, dog: true }},
+                    ]
                 },
                 description: {
                     vars: {
@@ -26,16 +34,13 @@
                     vars: {
                         author: 'Unknown',
                         prof: 'Manager',
-                        users: [
-                            {id: 1, name: 'Ivan'},
-                            {id: 2, name: 'John'},
-                            {id: 3, name: 'Lisa'},
-                            {id: 4, name: 'Kate'},
-                            {id: 5, name: 'Scarlet'},
-                            {id: 6, name: 'Piter'},
-                        ]
+                        user: {
+                            name: {
+                                short: 'Sam'
+                            }
+                        }
                     }
-                }
+                },
             }
         }
     </script>

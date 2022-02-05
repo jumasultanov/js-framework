@@ -47,9 +47,11 @@ class Component extends BaseComponent {
 
     /**
      * Определяем область данных для компонента
+     * @param {object|null} defaultVars Доп.данные
+     * @returns {this}
      */
-    defineArea() {
-        let { proxy, vars } = Area.find(this.path);
+    defineArea(defaultVars = null) {
+        let { proxy, vars } = Area.find(this.path, defaultVars);
         this.vars = proxy;
         this.controllers.forEach(controller => controller.mergeTo(vars));
         //Для объекта данных делаем предустановки для зависимостей прокси
@@ -79,6 +81,20 @@ class Component extends BaseComponent {
      */
     getVars() {
         return this.vars;
+    }
+
+    /**
+     * Возвращает новый компонент относительно текущей
+     * @param {string} name Новое название
+     * @param {boolean} ready Предстартовые установки (парсинг элемента и определение данных
+     * @param {object|null} defaultVars Доп. данные
+     * @returns {Component}
+     */
+    clone(name, ready = true, defaultVars = null) {
+        const cloneElement = this.element.cloneNode(true);
+        const path = [...this.path];
+        path.pop();
+        return Component.createEmpty(cloneElement, name, path, ready, defaultVars);
     }
 
     /**
@@ -154,8 +170,19 @@ class Component extends BaseComponent {
      * @return {this}
      */
     updatePath(parentPath = []) {
-        this.path = parentPath.filter(item => !item.startsWith('#'));
+        this.path = [...parentPath];
         this.path.push(this.name);
+        return this;
+    }
+
+    /**
+     * Определить новое название
+     * @param {string} name Название
+     * @returns {this}
+     */
+    updateName(name) {
+        this.name = name;
+        this.path[this.path.length-1] = name;
         return this;
     }
 
@@ -242,6 +269,10 @@ class Component extends BaseComponent {
         if (!this.enabled) return;
         console.log('DISABLE', this.path);
         this.enabled = false;
+    }
+
+    die() {
+        // TODO: Удалить все связанные в других местах объекты
     }
 
 }

@@ -169,6 +169,7 @@ class Parser {
         const componentName = `#construction:${this.getConstrCount()}`;
         let list = {};
         let next;
+        let readyComponent = true;
         switch (construction) {
             //Активные выражения, которые заменяются на коммент
             case 'if':
@@ -178,6 +179,7 @@ class Parser {
                 next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
                 break;
             case 'for':
+                readyComponent = false;
                 //Деление выражения конструкции
                 //на названия переменных в цикле и название в объекте данных, который перебирается
                 let as = [];
@@ -200,7 +202,7 @@ class Parser {
         //Заменяем на пустой коммент
         save.space = Block.replaceOnComment(node);
         //Создаем компонент
-        obj.component = Component.createEmpty(node, componentName, this.component.getPath());
+        obj.component = Component.createEmpty(node, componentName, this.component.getPath(), readyComponent);
     }
 
     /**
@@ -254,9 +256,10 @@ class Parser {
             //Set end index
             end = match.index + match[0].length;
             //Add expression
-            let text = new Text(match.input.substring(match.index, end));
-            let value = text.textContent.substr(2, match[0].length - 4);
-            newNodes.push(new VNode(text, this.component, {expr: value}));
+            const text = new Text(match.input.substring(match.index, end));
+            const value = text.textContent.substr(2, match[0].length - 4);
+            const data = { expr: value, transform: VNode.transformText };
+            newNodes.push(new VNode(text, this.component, data));
             split.push(text);
         }
         if (!split.length) return false;

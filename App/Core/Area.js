@@ -1,4 +1,4 @@
-import { LocalProxy, Dependency } from './Service.js';
+import { LocalProxy, Dependency, Helper } from './Service.js';
 
 class Area {
 
@@ -10,9 +10,44 @@ class Area {
     /**
      * Возвращает прокси по ее пути
      * @param {string[]|string} path Путь до прокси
-     * @returns {Proxy}
+     * @param {object|null} defaultVars Добавляемые доп. данные
+     * @returns {object}
      */
-    static find(path) {
+    static find(path, defaultVars = null) {
+        let current = this.findFull(path);
+        if (!current) return null;
+        //Добавляем доп. данные
+        if (defaultVars instanceof Object) {
+            for (const key in defaultVars) {
+                Object.defineProperty(current.vars, key, Helper.getDescriptor(defaultVars[key]));
+            }
+        }
+        return {
+            proxy: current.proxy,
+            vars: current.vars
+        };
+    }
+
+    static getOwnKey(path, key) {
+        //Проверка
+        path = this.checkPath(path);
+        if (!path) return null;
+        let current = this.globals;
+        let last = (current.hasOwnProperty(key) ? current : null);
+        for (let item of path) {
+            if (!(item in current)) break;
+            current = current[item];
+            if (current.hasOwnProperty(key)) last = current;
+        }
+        return last;
+    }
+
+    /**
+     * Возвращает объект по пути
+     * @param {string[]|string} path Путь до прокси
+     * @returns {object}
+     */
+    static findFull(path) {
         //Проверка
         path = this.checkPath(path);
         if (!path) return null;
@@ -23,10 +58,21 @@ class Area {
             }
             current = current[item];
         }
-        return {
-            proxy: current.proxy,
-            vars: current.vars
-        };
+        return current;
+    }
+
+    static delete(path) {
+        const area = Area.findFull(path.slice(0, -1));
+        if (!area) return;
+        delete area[path[path.length - 1]];
+    }
+
+    static move(oldPath, newPath) {
+        const area = Area.findFull(oldPath.slice(0, -1));
+        if (!area) return;
+        const lastOld = oldPath[oldPath.length - 1];
+        area[newPath[newPath.length - 1]] = area[lastOld];
+        delete area[lastOld];
     }
 
     /**
