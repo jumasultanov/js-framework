@@ -17,18 +17,30 @@ class InternalProxy {
         for (const key in vars) this.one(vars, key);
     }
 
+    /**
+     * Преобразует объект и дочерние объекты в прокси 
+     * @param {object} vars 
+     * @param {string} key 
+     */
     static one(vars, key) {
         if (vars[key] instanceof Object && typeof vars[key] == 'object') {
             const item = vars[key];
             //Если объект уже спроксирован, то не трогаем его и не проходимся по вложенным объектам
             if ('isProxy' in item) return;
+            //Проксируем сначала дочерние
             this.on(item);
+            //Добавляем скрытые предустановочные свойства
             item.__proto__ = this.getRoot(item);
             Dependency.define(item, false);
             vars[key] = new Proxy(item, LocalProxy);
         }
     }
 
+    /**
+     * Добавляем скрытый метод для объекта, который перебирается в цикле
+     * @param {object} vars Родительский объект
+     * @param {string} key Ключ
+     */
     static setWatcher(vars, key) {
         //TODO: 
         // Продумать момент, когда один и тот же массив или объект перебирается в двух и более местах
@@ -37,6 +49,10 @@ class InternalProxy {
         );
     }
 
+    /**
+     * Добавляем скрытый метод, который будет добавлять новое значение для объекта, откуда ее вызвали
+     * @param {object} vars Целевой объект
+     */
     static setCreate(vars) {
         //Добавляем скрытый метод добавления свойства
         const descriptorCreate = Helper.getDescriptor((prop, val) => {
@@ -70,6 +86,12 @@ class InternalProxy {
         return this[prop];
     }
 
+    /**
+     * Вызывает событие изменения в массиве через зарегистрированные зависимости в родительском объекте
+     * @param {object} target Перебираемый объект
+     * @param {number|object} index Ключ измененного элемента
+     * @param {number} change Константа из InternalProxy.ARRAY_*
+     */
     static arrayChange(target, index, change) {
         const root = target.getWatcher();
         root.vars.getHandler().call(root.key, {

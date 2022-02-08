@@ -78,6 +78,11 @@ class Block {
         savePoint.parentNode.insertBefore(insert, savePoint);
     }
 
+    /**
+     * Меняет местами два элемента
+     * @param {Node} element1 
+     * @param {Node} element2 
+     */
     static swap(element1, element2) {
         const space = new Comment();
         element2.parentNode.insertBefore(space, element2);

@@ -1,7 +1,7 @@
 import Directives from './Directives.js';
 import Component from '../../Component.js';
 import Area from '../../Area.js';
-import { NodeElement, Block, InternalProxy } from '../../Service.js';
+import { NodeElement, InternalProxy } from '../../Service.js';
 
 class VNode {
 

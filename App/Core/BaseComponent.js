@@ -86,6 +86,7 @@ class BaseComponent {
         if (ready) component.build().defineArea(defaultVars);
         return component;
     }
+    
     /**
      * После загрузки всех контроллеров компонентов после обновления дерева
      */

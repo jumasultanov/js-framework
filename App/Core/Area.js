@@ -14,6 +14,7 @@ class Area {
      * @returns {object}
      */
     static find(path, defaultVars = null) {
+        //Получаем область по пути
         let current = this.findFull(path);
         if (!current) return null;
         //Добавляем доп. данные
@@ -28,6 +29,12 @@ class Area {
         };
     }
 
+    /**
+     * Возвращает последнюю найденную область в пути, где присутствует ключ
+     * @param {string[]|string} path Путь
+     * @param {string} key Ключ
+     * @returns {object}
+     */
     static getOwnKey(path, key) {
         //Проверка
         path = this.checkPath(path);
@@ -61,17 +68,26 @@ class Area {
         return current;
     }
 
+    /**
+     * Удаляет область данных по пути
+     * @param {string[]|string} path Путь
+     */
     static delete(path) {
         const area = Area.findFull(path.slice(0, -1));
         if (!area) return;
         delete area[path[path.length - 1]];
     }
 
-    static move(oldPath, newPath) {
-        const area = Area.findFull(oldPath.slice(0, -1));
+    /**
+     * Меняет ключи местами для двух путей, должны лежать в одной области
+     * @param {string[]|string} path1 
+     * @param {string[]|string} path2 
+     */
+    static move(path1, path2) {
+        const area = Area.findFull(path1.slice(0, -1));
         if (!area) return;
-        const oldName = oldPath[oldPath.length - 1];
-        const newName = newPath[newPath.length - 1];
+        const oldName = path1[path1.length - 1];
+        const newName = path2[path2.length - 1];
         const move = area[newName];
         area[newName] = area[oldName];
         area[oldName] = move;

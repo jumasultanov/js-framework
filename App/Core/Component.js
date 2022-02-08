@@ -142,14 +142,23 @@ class Component extends BaseComponent {
         Component.enable(component);
     }
 
+    /**
+     * Меняет местами два дочерних компонента
+     * @param {Component} component1 
+     * @param {Component} component2 
+     */
     swapChild(component1, component2) {
+        //Меняем имена
         const newName = component2.name;
         const oldName = component1.name;
         component1.updateName(newName);
         component2.updateName(oldName);
+        //Меняем в списке дочерних компонентов
         this.children[newName] = component1;
         this.children[oldName] = component2;
+        //Меняем в DOM
         Block.swap(component1.element, component2.element);
+        //Меняем в списке данных
         Area.move(component1.path, component2.path);
     }
 
@@ -157,6 +166,7 @@ class Component extends BaseComponent {
      * Удаляет дочерний компонент с удалением из DOM
      * @param {Component} component Удаляемый компонент
      * @param {Set|null} inserted Список уже вставленных компонентов
+     * @param {boolean} withData Удалять ли данные
      */
     removeChild(component, inserted = null, withData = false) {
         delete this.children[component.name];
@@ -165,16 +175,22 @@ class Component extends BaseComponent {
         Block.remove(component.element);
         //Выключаем
         Component.disable(component);
+        //Удаляем данные, если нужно
         if (withData) Area.delete(component.path);
     }
 
+    /**
+     * Собирает все дочерние компоненты в одном месте, сортируя по именам
+     * @param {string[]} names Список названии
+     * @param {Node} savePoint Элемент, перед которым будут вставляться
+     */
     collectChildrenBlocks(names, savePoint) {
-        console.log(names);
+        //Перебираем с конца
         for (let i = names.length - 1; i > -1; i--) {
             const element = this.children[names[i]].element;
-            console.log(names[i], element);
-            console.log(savePoint);
+            //Если перед элементом уже стоит этот блок, то вставку не делаем
             if (element !== savePoint.previousSibling) Block.insert(element, savePoint);
+            //Сдвигаемся
             savePoint = savePoint.previousSibling;
         }
     }
