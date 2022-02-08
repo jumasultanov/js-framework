@@ -4,8 +4,9 @@ class InternalProxy {
 
     static ARRAY_PUSH = 0;
     static ARRAY_DELETE = 1;
-    static ARRAY_REPLACE = 2;
-    static ARRAY_SORT = 3;
+    static ARRAY_MOVE = 2;
+    static ARRAY_REVERSE = 3;
+    static ARRAY_SORT = 4;
 
     /**
      * Преобразует объекты в прокси с дочерними объектами
@@ -34,6 +35,14 @@ class InternalProxy {
         Object.defineProperty(vars[key].__proto__, 'getWatcher', 
             Helper.getDescriptor(() => ({ vars, key }), false, false, false)
         );
+    }
+
+    static setCreate(vars) {
+        //Добавляем скрытый метод добавления свойства
+        const descriptorCreate = Helper.getDescriptor((prop, val) => {
+            Object.defineProperty(vars, prop, Helper.getDescriptor(val));
+        }, false, false, false);
+        Object.defineProperty(vars, '$create', descriptorCreate);
     }
 
     /**

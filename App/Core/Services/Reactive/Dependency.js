@@ -56,7 +56,7 @@ class Dependency {
      * @param {string} prop Свойство
      */
     call(prop, params = null, recursive = false) {
-        console.log(prop, this);
+        //console.log(prop, this);
         //Получаем дочерние компоненты
         let children;
         if (this.component instanceof Component) {
@@ -66,7 +66,7 @@ class Dependency {
         } else if (this.component === true) children = Component.items;
         //Выполняем все функции
         if (prop in this.dependencies) {
-            console.log('CALL: '+prop,this.dependencies[prop]);
+            //console.log('CALL: '+prop,this.dependencies[prop]);
             for (const func of this.dependencies[prop]) {
                 if (func instanceof Function) func(params);
                 else if (func.enabled) func.func(params);

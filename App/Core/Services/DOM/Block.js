@@ -75,7 +75,14 @@ class Block {
      * @param {Node} savePoint Вставка до этого элемента
      */
     static insert(insert, savePoint) {
-        savePoint.parentElement.insertBefore(insert, savePoint);
+        savePoint.parentNode.insertBefore(insert, savePoint);
+    }
+
+    static swap(element1, element2) {
+        const space = new Comment();
+        element2.parentNode.insertBefore(space, element2);
+        element1.parentNode.insertBefore(element2, element1);
+        space.parentNode.replaceChild(element1, space);
     }
 
 }

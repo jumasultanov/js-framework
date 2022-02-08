@@ -34,8 +34,8 @@ class Directives {
             let val = call(expr, ctx);
             //Если первый раз, то собираем зависимости
             if (params && params.collect) {
-                console.log('%c%s', 'font-size:1.4em;color:green;padding:3px 0px 3px 10px', 'GET_DEP: '+this.$prop);
-                console.log(this.$target.getHandler());
+                //console.log('%c%s', 'font-size:1.4em;color:green;padding:3px 0px 3px 10px', 'GET_DEP: '+this.$prop);
+                //console.log(this.$target.getHandler());
                 if (this.$dep instanceof Function) {
                     this.$target.getHandler().add(this.$prop, this.$dep);
                 } else if (this.$dep instanceof Object) {
@@ -46,7 +46,7 @@ class Directives {
                 this.$prop = undefined;
                 this.$target = undefined;
             }
-            console.log('%c%s', 'font-size:1.4em;color:#f66;padding:3px 0px 3px 10px;', expr.trim()+' -> '+JSON.stringify(val));
+            //console.log('%c%s', 'font-size:1.4em;color:#f66;padding:3px 0px 3px 10px;', expr.trim()+' -> '+JSON.stringify(val));
             //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
             //Если изменилось или грубо нужно обновить, изменяем значение и вызываем колбэк

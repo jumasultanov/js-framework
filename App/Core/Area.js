@@ -70,9 +70,11 @@ class Area {
     static move(oldPath, newPath) {
         const area = Area.findFull(oldPath.slice(0, -1));
         if (!area) return;
-        const lastOld = oldPath[oldPath.length - 1];
-        area[newPath[newPath.length - 1]] = area[lastOld];
-        delete area[lastOld];
+        const oldName = oldPath[oldPath.length - 1];
+        const newName = newPath[newPath.length - 1];
+        const move = area[newName];
+        area[newName] = area[oldName];
+        area[oldName] = move;
     }
 
     /**

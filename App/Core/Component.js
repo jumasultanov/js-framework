@@ -142,18 +142,41 @@ class Component extends BaseComponent {
         Component.enable(component);
     }
 
+    swapChild(component1, component2) {
+        const newName = component2.name;
+        const oldName = component1.name;
+        component1.updateName(newName);
+        component2.updateName(oldName);
+        this.children[newName] = component1;
+        this.children[oldName] = component2;
+        Block.swap(component1.element, component2.element);
+        Area.move(component1.path, component2.path);
+    }
+
     /**
      * Удаляет дочерний компонент с удалением из DOM
      * @param {Component} component Удаляемый компонент
-     * @param {Set} inserted Список уже вставленных компонентов
+     * @param {Set|null} inserted Список уже вставленных компонентов
      */
-    removeChild(component, inserted) {
+    removeChild(component, inserted = null, withData = false) {
         delete this.children[component.name];
-        inserted.delete(component);
+        if (inserted) inserted.delete(component);
         //Удаляем элементы из DOM
         Block.remove(component.element);
         //Выключаем
         Component.disable(component);
+        if (withData) Area.delete(component.path);
+    }
+
+    collectChildrenBlocks(names, savePoint) {
+        console.log(names);
+        for (let i = names.length - 1; i > -1; i--) {
+            const element = this.children[names[i]].element;
+            console.log(names[i], element);
+            console.log(savePoint);
+            if (element !== savePoint.previousSibling) Block.insert(element, savePoint);
+            savePoint = savePoint.previousSibling;
+        }
     }
 
     /**
