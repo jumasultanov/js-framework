@@ -1,4 +1,4 @@
-import { AppConfig } from "../../../config.js";
+import { ParserConfig } from "../../../config.js";
 
 class Block {
 
@@ -36,9 +36,9 @@ class Block {
      * @returns {Object[]}
      */
     static getInfo(element) {
-        const block = element.getAttribute(AppConfig.componentAttr) || null;
+        const block = element.getAttribute(ParserConfig.componentAttr) || null;
         if (block === null) return false;
-        element.removeAttribute(AppConfig.componentAttr);
+        element.removeAttribute(ParserConfig.componentAttr);
         let name = block;
         let controllerNames = [];
         if (block.indexOf(':')>-1) {

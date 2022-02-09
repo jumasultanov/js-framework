@@ -327,30 +327,6 @@ class VNode {
     }
 
     /**
-     * Преобразование значении для условии IF
-     * @param {any} value Значение
-     * @returns {boolean}
-     */
-    static transformIf(value) {
-        return !!value;
-    }
-
-    /**
-     * Преобразование значении в текст
-     * @param {any} value Значение
-     * @returns {string}
-     */
-    static transformText(value) {
-        if (typeof value != 'string') {
-            if (value) {
-                if (value instanceof Object) value = JSON.stringify(value);
-                else value = String(value);
-            } else value = '';
-        }
-        return value;
-    }
-
-    /**
      * Возвращает объект данных для элемента перебираемого объекта или массивиа
      * @param {object} data Данные конструкции цикла
      * @param {string} key Название ключа

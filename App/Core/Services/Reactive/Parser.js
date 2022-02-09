@@ -1,11 +1,9 @@
-import { AppConfig } from '../../../config.js';
+import { ParserConfig } from '../../../config.js';
+import Directive from '../../Directive.js'
 import Component from '../../Component.js'
 import { Block, VDOM, VNode } from '../../Service.js';
 
 class Parser {
-    
-    //Регулярка для поиска шаблона в тексте
-    static findExpressions = /{{[^}]*}}/g; // RegEXP /\{\{((?:.|\r?\n)+?)\}\}/g -> for VueJS
 
     node;
     vdom;
@@ -27,7 +25,7 @@ class Parser {
     static start(element, include = true) {
         let result = {};
         Block.find(element, include, true, current => {
-            if (current.hasAttribute(AppConfig.componentAttr)) {
+            if (current.hasAttribute(ParserConfig.componentAttr)) {
                 const component = Component.create(current);
                 if (component) {
                     result[component.name] = component;
@@ -65,7 +63,7 @@ class Parser {
         Block.find(node, include, false, current => {
             if (current.nodeType == Node.ELEMENT_NODE) {
                 //Если это блок-компонент
-                if (current.hasAttribute(AppConfig.componentAttr)) {
+                if (current.hasAttribute(ParserConfig.componentAttr)) {
                     if (Component.create(current, this.component)) return false;
                 }
             }
@@ -110,7 +108,7 @@ class Parser {
         cycleAttrs:
         for (const {name, value} of node.attributes) {
             let f, $name;
-            if (name.startsWith('m-')) f = '#';
+            if (name.startsWith(ParserConfig.prefixConstr)) f = '#';
             else f = name.substr(0, 1);
             //Event
             switch (f) {
@@ -163,40 +161,19 @@ class Parser {
      */
     setConstructions(node, attr, value, save) {
         //Формируем базовые данные для всех конструкции
-        const construction = attr.substr(2);
+        const construction = attr.substring(ParserConfig.prefixConstr.length);
         save.constr[construction] = {};
         const obj = save.constr[construction];
-        const componentName = `#construction:${this.getConstrCount()}`;
-        let list = {};
-        let next;
-        let readyComponent = true;
-        switch (construction) {
-            //Активные выражения, которые заменяются на коммент
-            case 'if':
-                //Указываем трансформацию значении
-                obj.transform = VNode.transformIf;
-                //Собираем и сохраняем последующие блоки конструкции
-                next = this.unionNodes(node.nextElementSibling, ['m-else-if', 'm-else'], list);
-                break;
-            case 'for':
-                readyComponent = false;
-                //Деление выражения конструкции
-                //на названия переменных в цикле и название в объекте данных, который перебирается
-                let as = [];
-                if (value.indexOf(' in ') != -1) {
-                    [as, value] = value.split(' in ');
-                    as = as.replace(/[\(\)\s]/g, '').split(',');
-                }
-                obj.as = as;
-                //Собираем и сохраняем последующие блоки конструкции
-                next = this.unionNodes(node.nextElementSibling, ['m-for-else'], list);
-                break;
-        }
+        //Название компонента
+        const componentName = `${ParserConfig.prefixCCName}:${this.getConstrCount()}`;
+        //Получаем данные после обработки из директивы
+        let { expr, list, next, readyComponent } = Directive.parse(construction, value, node, obj, this);
+        if (expr === undefined) return;
         //Сохраняем связанные конструкции
         if (next) obj.next = next;
         Object.assign(save.constr, list);
         //Сохарняем выражение здесь, конструкция могла ее изменить
-        obj.expr = value;
+        obj.expr = expr;
         //Удаляем атрибут
         node.removeAttribute(attr);
         //Заменяем на пустой коммент
@@ -208,22 +185,22 @@ class Parser {
     /**
      * Поиск и парсинг соседних элементов конструкции
      * @param {Node} node Рассматриваемый элемент
-     * @param {string[]} attrs Искомые атрибуты
-     * @param {object} list Список конструкции
+     * @param {string[]} constructions Искомые конструкции
+     * @param {object} list Список конструкции, объект, куда добавится
      * @returns {string|null} Название следующей конструкции
      */
-    unionNodes(node, attrs, list) {
+    unionNodes(node, constructions, list) {
         if (!(node instanceof Node)) return null;
         if (node.nodeType != Node.ELEMENT_NODE) return null;
-        for (const attr of attrs) {
+        for (const name of constructions) {
+            const attr = ParserConfig.prefixConstr + name;
             if (!node.hasAttribute(attr)) continue;
             //Указываем имена для связки
             const number = this.getConstrCount();
-            const name = attr.substr(2);
             const uniqueName = `${name}-${number}`;
-            const componentName = `#construction:${number}`;
+            const componentName = `${ParserConfig.prefixCCName}:${number}`;
             //Сразу проверяем следующий элмент
-            const next = this.unionNodes(node.nextElementSibling, attrs, list);
+            const next = this.unionNodes(node.nextElementSibling, constructions, list);
             //Готовим элемент к транспортировке
             node.parentNode.removeChild(node);
             const expr = node.getAttribute(attr);
@@ -248,7 +225,7 @@ class Parser {
         let split = [];
         let end = false;
         let str = node.textContent;
-        for (const match of str.matchAll(Parser.findExpressions)) {
+        for (const match of str.matchAll(ParserConfig.exprInText)) {
             //Pre text
             if (split.length == 0 && match.index > 0) split.push(new Text(match.input.substring(0, match.index)));
             //Between text after prev
@@ -258,7 +235,7 @@ class Parser {
             //Add expression
             const text = new Text(match.input.substring(match.index, end));
             const value = text.textContent.substr(2, match[0].length - 4);
-            const data = { expr: value, transform: VNode.transformText };
+            const data = { expr: value, transform: Parser.transformText };
             newNodes.push(new VNode(text, this.component, data));
             split.push(text);
         }
@@ -278,6 +255,21 @@ class Parser {
     getConstrCount() {
         this.constrCount++;
         return this.constrCount;
+    }
+    
+    /**
+     * Преобразование значении в текст
+     * @param {any} value Значение
+     * @returns {string}
+     */
+    static transformText(value) {
+        if (typeof value != 'string') {
+            if (value) {
+                if (value instanceof Object) value = JSON.stringify(value);
+                else value = String(value);
+            } else value = '';
+        }
+        return value;
     }
     
 }

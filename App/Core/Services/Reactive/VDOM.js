@@ -38,7 +38,6 @@ class VDOM {
     directives(children) {
         if (!children.length) return;
         children.forEach(child => {
-            //let vnode = child.setDirectives();
             child.setDirectives();
         });
     }
