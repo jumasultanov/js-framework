@@ -30,6 +30,7 @@ class Dependency {
             this.dependencies[prop].push({ func, enabled: true });
         } else {
             // TODO: надо чтобы сюда не приходили существующие функции
+            // TODO: удалить при ненадобности
             if (this.dependencies[prop].includes(func)) {
                 console.error('INCLUDES: '+prop, this.dependencies[prop].includes(func));
             }

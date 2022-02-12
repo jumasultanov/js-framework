@@ -5,7 +5,7 @@ import { Directives, InternalProxy } from "../Service.js";
 class For {
 
     //Название конструкции
-    static construction = 'for';
+    static name = 'for';
     //Названия связанных конструкции
     static nextConstructions = ['for-else'];
     //Константы изменения массива
@@ -96,10 +96,13 @@ class For {
                 this.arrayChange(target, prop, this.ARRAY_PUSH);
             } else {
                 // TODO: 
+                //      Появляется ошибка Component.js:153 prop 'name' from undefined in component1.name
+                //          при полном очистке либо как-то еще
+                //
+                //      Изменить название класса Directives на Executor
+                //      Отработать события и удаление из элементов при отключении компонентов (может и нет)
+                //      
                 //      Отработать перебор объектов, чисел и строк
-                //      Распилить на классы директивы 
-                //      !!! и через обсервер обращаться к каждой директиве, 
-                //          если он подписан на события GET, SET и т.д.
                 //
                 if (this.arraySort) {
                     if (target[prop] !== val) this.arraySort.push(prop);

@@ -11,7 +11,11 @@ export const ParserConfig = {
     //Префикс атрибута для конструкции
     prefixConstr: 'm-',
     //Префикс для имен компонентов, создаваемых конструкциями
-    prefixCCName: '#construction'
+    prefixCCName: '#construction',
+    //Префикс для добавления события на элементе
+    prefixEvent: '@',
+    //Префикс для добавления атрибута на элементе
+    prefixAttr: ':'
 }
 
 export const ConnectConfig = {

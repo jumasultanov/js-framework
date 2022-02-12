@@ -1,7 +1,7 @@
 class VDOM {
 
     //Список конструкции VNode
-    items = [];
+    items = new Set();
     //Флаг активности
     enabled = false;
 
@@ -11,7 +11,7 @@ class VDOM {
      */
     add(vnodes) {
         for (const vnode of vnodes) {
-            this.items.push(vnode);
+            this.items.add(vnode);
         }
     }
 
@@ -36,10 +36,8 @@ class VDOM {
      * @param {VNode[]} children 
      */
     directives(children) {
-        if (!children.length) return;
-        children.forEach(child => {
-            child.setDirectives();
-        });
+        if (!children.size) return;
+        for (const child of children) child.setDirectives();
     }
 
 }

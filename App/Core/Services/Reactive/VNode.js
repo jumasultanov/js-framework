@@ -1,6 +1,6 @@
 import Directive from '../../Directive.js';
 import Component from '../../Component.js';
-import { Directives, NodeElement } from '../../Service.js';
+import { NodeElement } from '../../Service.js';
 
 class VNode {
 
@@ -27,14 +27,6 @@ class VNode {
     }
 
     /**
-     * Является ли элемент конструкцией
-     * @returns bool
-     */
-    hasConstr() {
-        return this.isConstr;
-    }
-
-    /**
      * Возвращает объект с данными
      * @returns {object}
      */
@@ -48,79 +40,11 @@ class VNode {
      * @returns {VNode|null}
      */
     setDirectives() {
-        if (this.isText) {
-            this.setText();
-        } else if (this.isConstr) {
+        if (this.isConstr) {
             Directive.onName(this.data.constrName, 'onExecute', this);
         } else {
-            this.setEvents();
-            this.setAttributes();
-            this.setStyles();
-            this.setClasses();
-            this.setProperties();
+            Directive.onName('basic', 'onExecute', this);
         }
-    }
-
-    /**
-     * Установка событии
-     */
-    setEvents() {
-        for (const name in this.data.on) {
-            const data = this.data.on[name];
-            Directives.exec('on', this.node, name, data.expr, this.getVars());
-        }
-    }
-
-    /**
-     * Установка атрибутов
-     */
-    setAttributes() {
-        for (const name in this.data.attrs) {
-            const data = this.data.attrs[name];
-            Directives.expr(data.expr, data, this.getVars(), false, () => {
-                this.node.attr(name, data.current);
-            });
-        }
-    }
-
-    /**
-     * Установка стилей
-     */
-    setStyles() {
-        /*for (const name in this.data.style) {
-            const data = this.data.style[name];
-            Directives.exec('bind', this.node, name, data, this.getVars());
-        }*/
-    }
-
-    /**
-     * Установка классов
-     */
-    setClasses() {
-        /*for (const name in this.data.class) {
-            const data = this.data.class[name];
-            Directives.exec('bind', this.node, name, data, this.getVars());
-        }*/
-    }
-
-    /**
-     * Установка свойств
-     */
-    setProperties() {
-        /*for (const name in this.data.props) {
-            const data = this.data.props[name];
-            Directives.exec('prop', this.node, name, data, this.getVars());
-        }*/
-    }
-
-    /**
-     * Установка текста
-     */
-    setText() {
-        let data = this.data;
-        Directives.expr(data.expr, data, this.getVars(), false, () => {
-            this.node.text(data.current);
-        });
     }
 
     /**
@@ -134,8 +58,6 @@ class VNode {
             style: null, //Стили
             class: null, //Классы
             props: {}, //Свойства элемента
-            constr: {}, //Конструкции
-            space: null, //Замененный коммент на блок
         };
     }
 

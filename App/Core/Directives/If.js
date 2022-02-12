@@ -4,7 +4,7 @@ import { Directives } from "../Service.js";
 class If {
 
     //Название конструкции
-    static construction = 'if';
+    static name = 'if';
     //Названия связанных конструкции
     static nextConstructions = ['else-if', 'else'];
 

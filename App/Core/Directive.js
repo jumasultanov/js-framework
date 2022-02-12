@@ -1,3 +1,4 @@
+import Basic from './Directives/Basic.js';
 import If from './Directives/If.js';
 import For from './Directives/For.js';
 
@@ -7,7 +8,7 @@ class Directive {
      * Регистрация директив
      */
     static boot() {
-        this.listen(If).listen(For);
+        this.listen(Basic).listen(If).listen(For);
     }
 
     /**
@@ -38,7 +39,7 @@ class Directive {
      */
     static include(prop, directive) {
         if (!this[prop]) this[prop] = {};
-        this[prop][directive.construction] = directive;
+        this[prop][directive.name] = directive;
         return this;
     }
 
@@ -49,8 +50,8 @@ class Directive {
      * @returns {this}
      */
     static exclude(prop, directive) {
-        if (this[prop] && directive.construction in this[prop]) {
-            delete this[prop][directive.construction];
+        if (this[prop] && directive.name in this[prop]) {
+            delete this[prop][directive.name];
             if (Object.keys(this[prop]).length === 0) this[prop] = undefined;
         }
         return this;
