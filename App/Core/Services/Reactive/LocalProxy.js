@@ -18,6 +18,13 @@ class LocalProxy {
         return { proxy, vars };
     }
 
+    /**
+     * Чтение свойства объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {object} receiver Целевой объект
+     * @returns {any}
+     */
     static get(target, prop, receiver) {
         if (typeof prop !== 'symbol' && Directives.$dep && prop !== 'hasOwnProperty') {
             if (target.hasOwnProperty(prop) || Directives.$inners) {
@@ -33,6 +40,14 @@ class LocalProxy {
         return Reflect.get(target, prop, receiver);
     }
     
+    /**
+     * Изменение свойства объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {any} val Значение свойства объекта
+     * @param {object} receiver Целевой объект
+     * @returns {boolean}
+     */
     static set(target, prop, val, receiver) {
         //Для установки радительского Proxy объекта
         if (prop == '__proto__') {
@@ -59,15 +74,19 @@ class LocalProxy {
         return true;
     }
 
+    /**
+     * Удаление свойства объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {object} receiver Целевой объект
+     * @returns {boolean}
+     */
     static deleteProperty(target, prop, receiver) {
         //Выполняем частные методы директив
         const result = Directive.on('onProxyDeleteProperty', target, prop, receiver);
         if (result !== undefined) return result;
         return Reflect.deleteProperty(target, prop, receiver);
     }
-
-    // TODO:
-    // Add another catcher functions
 
 }
 

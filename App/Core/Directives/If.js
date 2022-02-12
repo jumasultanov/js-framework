@@ -3,15 +3,35 @@ import { Directives } from "../Service.js";
 
 class If {
 
+    //Название конструкции
     static construction = 'if';
+    //Названия связанных конструкции
     static nextConstructions = ['else-if', 'else'];
 
+    /**
+     * Регистрация директивы
+     */
     static boot() {
+        //Добавляем слушателей на события
         Directive
             .include('onParse', this)
             .include('onExecute', this);
     }
 
+    /**
+     * Событие при парсинге
+     * @param {string} expr Выражение
+     * @param {Node} node Элемент DOM
+     * @param {object} data Данные конструкции
+     * @param {Parser} parser Объект парсера
+     * @returns {object} Должен возвращать объект из:
+     *      {
+     *          - {string} expr             - выражение, можно изменять
+     *          - {object} list             - список блоков-компонентов
+     *          - {string|null} next        - следующий блок конструкции, если нужно
+     *          - {boolean} readyComponent  - cразу ли запускать компонент
+     *      }
+     */
     static onParse(expr, node, data, parser) {
         let list = {};
         //Указываем трансформацию значении
@@ -30,12 +50,17 @@ class If {
         return !!value;
     }
 
+    /**
+     * Событие при активации конструкции
+     * @param {VNode} vnode 
+     */
     static onExecute(vnode) {
         this.constr(vnode);
     }
 
     /**
-     * Выполнение конструкции IF
+     * Выполнение конструкции
+     * @param {VNode} vnode 
      * @param {boolean} next Имя следующего блока конструкции
      */
     static constr(vnode, next = 'if') {
@@ -75,6 +100,7 @@ class If {
     
     /**
      * Изменение активности функции в Dependency
+     * @param {VNode} vnode 
      * @param {string} next Имя следующего блока конструкции
      * @param {boolean} enable Включить или отключить
      */

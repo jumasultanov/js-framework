@@ -4,7 +4,9 @@ import { Directives, InternalProxy } from "../Service.js";
 
 class For {
 
+    //Название конструкции
     static construction = 'for';
+    //Названия связанных конструкции
     static nextConstructions = ['for-else'];
     //Константы изменения массива
     static ARRAY_PUSH = 0;
@@ -15,7 +17,11 @@ class For {
     //Предыдущее прочитанное свойство массива
     static prevPosition = null;
 
+    /**
+     * Регистрация директивы
+     */
     static boot() {
+        //Добавляем слушателей на события
         Directive
             .include('onParse', this)
             .include('onProxyGet', this)
@@ -24,6 +30,20 @@ class For {
             .include('onExecute', this);
     }
 
+    /**
+     * Событие при парсинге
+     * @param {string} expr Выражение
+     * @param {Node} node Элемент DOM
+     * @param {object} data Данные конструкции
+     * @param {Parser} parser Объект парсера
+     * @returns {object} Должен возвращать объект из:
+     *      {
+     *          - {string} expr             - выражение, можно изменять
+     *          - {object} list             - список блоков-компонентов
+     *          - {string|null} next        - следующий блок конструкции, если нужно
+     *          - {boolean} readyComponent  - cразу ли запускать компонент
+     *      }
+     */
     static onParse(expr, node, data, parser) {
         let list = {};
         //Деление выражения конструкции
@@ -39,7 +59,13 @@ class For {
         return { expr, list, next, readyComponent: false }
     }
 
-    static onProxyGet(target, prop, receiver) {
+    /**
+     * Событие при чтении свойства из объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {object} receiver Целевой объект
+     */
+    static onProxyGet(target, prop) {
         if (!target.isArray) return undefined;
         if (!isNaN(Number(prop))) {
             this.prevPosition = prop;
@@ -52,6 +78,13 @@ class For {
         }
     }
 
+    /**
+     * Событие при изменении свойства из объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {any} val Значение свойства объекта
+     * @param {object} receiver Целевой объект
+     */
     static onProxySet(target, prop, val, receiver) {
         if (!target.isArray) return undefined;
         //Добавление в массив
@@ -106,6 +139,12 @@ class For {
         }
     }
 
+    /**
+     * Событие при удалении свойства из объекта
+     * @param {object} target Объект
+     * @param {string} prop Название свойства объекта
+     * @param {object} receiver Целевой объект
+     */
     static onProxyDeleteProperty(target, prop, receiver) {
         if (!target.isArray) return undefined;
         //Удаление из массива
@@ -131,13 +170,16 @@ class For {
         }, true);
     }
 
+    /**
+     * Событие при активации конструкции
+     * @param {VNode} vnode 
+     */
     static onExecute(vnode) {
         this.constr(vnode);
     }
 
-        /**
-     * 
-     * @returns {VNode}
+    /**
+     * Выполнение конструкции
      */
     static constr(vnode) {
         let data = vnode.data.constr.for;

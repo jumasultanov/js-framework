@@ -3,12 +3,16 @@ import For from './Directives/For.js';
 
 class Directive {
 
+    /**
+     * Регистрация директив
+     */
     static boot() {
         this.listen(If).listen(For);
     }
 
     /**
-     * Подключение директив
+     * Добавление слушателей из директивы
+     * @param {Class} directive Класс директивы
      * @returns {this}
      */
     static listen(directive) {
@@ -17,7 +21,8 @@ class Directive {
     }
 
     /**
-     * Отключение директив
+     * Удаление слушателей директивы
+     * @param {Class} directive Класс директивы
      * @returns {this}
      */
     static removeListener(directive) {
@@ -25,12 +30,24 @@ class Directive {
         return this;
     }
 
+    /**
+     * Включение в список класс слушателя
+     * @param {string} prop Название списка
+     * @param {Class} directive Класс директивы
+     * @returns {this}
+     */
     static include(prop, directive) {
         if (!this[prop]) this[prop] = {};
         this[prop][directive.construction] = directive;
         return this;
     }
 
+    /**
+     * Удаление из списка класс слушателя
+     * @param {string} prop Название списка
+     * @param {Class} directive Класс директивы
+     * @returns {this}
+     */
     static exclude(prop, directive) {
         if (this[prop] && directive.construction in this[prop]) {
             delete this[prop][directive.construction];
@@ -39,6 +56,11 @@ class Directive {
         return this;
     }
 
+    /**
+     * Триггер события для директив всего списка
+     * @param {string} prop Название списка
+     * @returns {any}
+     */
     static on(prop, ...args) {
         if (this[prop]) {
             for (const name in this[prop]) {
@@ -49,6 +71,12 @@ class Directive {
         }
     }
 
+    /**
+     * Триггер события для одного элемента списка
+     * @param {string} name Название элемента
+     * @param {string} prop Название списка
+     * @returns {any}
+     */
     static onName(name, prop, ...args) {
         if (this[prop] && this[prop][name]) {
             return this[prop][name][prop].apply(this[prop][name], args);
