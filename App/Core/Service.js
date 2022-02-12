@@ -7,6 +7,7 @@ export { default as NodeElement } from './Services/DOM/NodeElement.js'
 //Reactive
 export { default as LocalProxy } from './Services/Reactive/LocalProxy.js'
 export { default as InternalProxy } from './Services/Reactive/InternalProxy.js'
+export { default as Directives } from './Services/Reactive/Directives.js'
 export { default as Dependency } from './Services/Reactive/Dependency.js'
 export { default as Parser } from './Services/Reactive/Parser.js'
 export { default as VDOM } from './Services/Reactive/VDOM.js'

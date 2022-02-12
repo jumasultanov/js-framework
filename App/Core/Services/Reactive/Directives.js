@@ -102,14 +102,6 @@ class Directives {
         };
     }
 
-    static model() {
-        // TODO:
-        /*
-        el.value = ctx[val];
-        el.oninput = () => (ctx[val] = el.value);
-        */
-    }
-
 }
 
 export default Directives

@@ -3,47 +3,56 @@ import For from './Directives/For.js';
 
 class Directive {
 
-    static registered = {};
-
     static boot() {
-        this.on(If).on(For);
+        this.listen(If).listen(For);
     }
 
     /**
      * Подключение директив
+     * @returns {this}
      */
-    static on(directive) {
-        this.registered[directive.construction] = directive;
+    static listen(directive) {
+        if ('boot' in directive) directive.boot();
         return this;
     }
 
     /**
      * Отключение директив
+     * @returns {this}
      */
-    static off(directive) {
-        delete this.registered[directive.construction];
+    static removeListener(directive) {
+        for (prop of Object.keys(this)) this.exclude(prop, directive);
         return this;
     }
 
-    /**
-     * 
-     * @param {*} construction 
-     * @param {*} expr 
-     * @param {*} node 
-     * @param {*} data 
-     * @param {*} parser 
-     * @returns 
-     */
-    static parse(construction, expr, node, data, parser) {
-        if (construction in this.registered) {
-            //Директива должна возвращать объект из:
-            // @param {string} expr             выражение, если изменилось
-            // @param {object} list             список блоков-компонентов
-            // @param {string|null} next        следующий блок конструкции, если нужно
-            // @param {boolean} readyComponent  cразу ли запускать компонент
-            return this.registered[construction].parse(expr, node, data, parser);
+    static include(prop, directive) {
+        if (!this[prop]) this[prop] = {};
+        this[prop][directive.construction] = directive;
+        return this;
+    }
+
+    static exclude(prop, directive) {
+        if (this[prop] && directive.construction in this[prop]) {
+            delete this[prop][directive.construction];
+            if (Object.keys(this[prop]).length === 0) this[prop] = undefined;
         }
-        return false;
+        return this;
+    }
+
+    static on(prop, ...args) {
+        if (this[prop]) {
+            for (const name in this[prop]) {
+                const directive = this[prop][name];
+                const result = directive[prop].apply(directive, args);
+                if (result !== undefined) return result;
+            }
+        }
+    }
+
+    static onName(name, prop, ...args) {
+        if (this[prop] && this[prop][name]) {
+            return this[prop][name][prop].apply(this[prop][name], args);
+        }
     }
 
 }

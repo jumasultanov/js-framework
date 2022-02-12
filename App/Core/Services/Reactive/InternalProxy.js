@@ -2,12 +2,6 @@ import { Helper, LocalProxy, Dependency } from '../../Service.js';
 
 class InternalProxy {
 
-    static ARRAY_PUSH = 0;
-    static ARRAY_DELETE = 1;
-    static ARRAY_MOVE = 2;
-    static ARRAY_REVERSE = 3;
-    static ARRAY_SORT = 4;
-
     /**
      * Преобразует объекты в прокси с дочерними объектами
      * @param {object} vars Проксируемый объект
@@ -84,20 +78,6 @@ class InternalProxy {
             Object.defineProperty(this[prop], 'isProxy', Helper.getDescriptor(true, false, false, false));
         }
         return this[prop];
-    }
-
-    /**
-     * Вызывает событие изменения в массиве через зарегистрированные зависимости в родительском объекте
-     * @param {object} target Перебираемый объект
-     * @param {number|object} index Ключ измененного элемента
-     * @param {number} change Константа из InternalProxy.ARRAY_*
-     */
-    static arrayChange(target, index, change) {
-        const root = target.getWatcher();
-        root.vars.getHandler().call(root.key, {
-            force: true,
-            change, index
-        }, true);
     }
 
 }

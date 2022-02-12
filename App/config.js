@@ -8,14 +8,10 @@ export const ParserConfig = {
     exprInText: /{{[^}]*}}/g, // RegEXP /\{\{((?:.|\r?\n)+?)\}\}/g -> for VueJS
     //Атрибут для блока-компонента
     componentAttr: 'm-block',
-    //Префикс для конструкции
+    //Префикс атрибута для конструкции
     prefixConstr: 'm-',
     //Префикс для имен компонентов, создаваемых конструкциями
     prefixCCName: '#construction'
-}
-
-export const DirectiveConfig = {
-    
 }
 
 export const ConnectConfig = {

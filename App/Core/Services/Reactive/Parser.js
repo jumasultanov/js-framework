@@ -166,8 +166,12 @@ class Parser {
         const obj = save.constr[construction];
         //Название компонента
         const componentName = `${ParserConfig.prefixCCName}:${this.getConstrCount()}`;
-        //Получаем данные после обработки из директивы
-        let { expr, list, next, readyComponent } = Directive.parse(construction, value, node, obj, this);
+        // Директива должна возвращать объект из:
+        // @param {string} expr             выражение, если изменилось
+        // @param {object} list             список блоков-компонентов
+        // @param {string|null} next        следующий блок конструкции, если нужно
+        // @param {boolean} readyComponent  cразу ли запускать компонент
+        let { expr, list, next, readyComponent } = Directive.onName(construction, 'onParse', value, node, obj, this);
         if (expr === undefined) return;
         //Сохраняем связанные конструкции
         if (next) obj.next = next;
@@ -178,6 +182,8 @@ class Parser {
         node.removeAttribute(attr);
         //Заменяем на пустой коммент
         save.space = Block.replaceOnComment(node);
+        //Записываем имя конструкции
+        save.constrName = construction;
         //Создаем компонент
         obj.component = Component.createEmpty(node, componentName, this.component.getPath(), readyComponent);
     }
