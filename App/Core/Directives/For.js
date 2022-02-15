@@ -97,12 +97,14 @@ class For {
             } else {
                 // TODO: 
                 //      Появляется ошибка Component.js:153 prop 'name' from undefined in component1.name
-                //          при полном очистке либо как-то еще
+                //          при полном очистке либо как-то еще (не удалось отследить)
                 //
                 //      Изменить название класса Directives на Executor
                 //      Отработать события и удаление из элементов при отключении компонентов (может и нет)
                 //      
+                //
                 //      Отработать перебор объектов, чисел и строк
+                //      ---
                 //
                 if (this.arraySort) {
                     if (target[prop] !== val) this.arraySort.push(prop);
@@ -193,6 +195,11 @@ class For {
             console.warn(params);
             const count = data.current.length;
             let forElse;
+            //Обощаем данные для конкретного изменения
+            this.vnode = vnode;
+            this.data = data;
+            this.namePrefix = `${data.component.name}:`;
+            //
             if (data.next) forElse = vnode.data.constr[data.next];
             if (data.current instanceof Object) {
                 if (count && forElse && forElse.component.isActive()) {
@@ -202,72 +209,23 @@ class For {
                     const key = params.index;
                     switch (params.change) {
                         case this.ARRAY_PUSH:
-                            const replaceComp = vnode.component.children[namePrefix + key];
-                            let before;
-                            if (replaceComp) {
-                                before = replaceComp.element.nextSibling;
-                                vnode.component.removeChild(replaceComp, vnode.data.inserted, true);
-                            }
-                            if (!before) before = vnode.data.space;
-                            const insertComp = data.component.clone(namePrefix + key, true, this.getObjectForCycle(data, key));
-                            vnode.component.insertChild(insertComp, before, vnode.data.inserted);
+                            this.componentPush(key);
                             return;
                         case this.ARRAY_MOVE:
-                            const removeComp = vnode.component.children[namePrefix + key.value];
-                            const moveComp = vnode.component.children[namePrefix + key.replace];
-                            console.log('MOVE', moveComp);
-                            console.log('OLD', removeComp);
-                            vnode.component.swapChild(moveComp, removeComp);
-                            const oldKey = moveComp.vars[data.as[1]||'key'];
-                            moveComp.vars[data.as[1]||'key'] = key.value;
-                            removeComp.vars[data.as[1]||'key'] = oldKey;
+                            this.componentSwap(key.replace, key.value);
                             return;
                         case this.ARRAY_REVERSE:
                             for (let i = 0; i < key.length; i += 2) {
                                 const first = key[i];
                                 const second = key[i + 1];
-                                const comp1 = vnode.component.children[namePrefix + first];
-                                const comp2 = vnode.component.children[namePrefix + second];
-                                console.log('FIRST', comp1);
-                                console.log('SECOND', comp2);
-                                vnode.component.swapChild(comp1, comp2);
-                                comp1.vars[data.as[1]||'key'] = second;
-                                comp2.vars[data.as[1]||'key'] = first;
+                                this.componentSwap(first, second);
                             }
                             return;
                         case this.ARRAY_SORT:
-                            let tempComps = {};
-                            let tempAreas = {};
-                            const areas = Area.findFull(data.component.path.slice(0, -1));
-                            for (let i = 0; i < key.length; i++) {
-                                const name = namePrefix + key[i];
-                                const value = data.current[key[i]];
-                                for (let j = 0; j < key.length; j++) {
-                                    if (i === j) continue;
-                                    const foundName = namePrefix + key[j];
-                                    const comp = vnode.component.children[foundName];
-                                    if (comp.vars[data.as[0]||'item'] === value) {
-                                        comp.updateName(name);
-                                        comp.vars[data.as[1]||'key'] = key[i];
-                                        tempComps[name] = comp;
-                                        tempAreas[name] = areas[foundName];
-                                        break;
-                                    }
-                                }
-                            }
-                            for (let name in tempComps) {
-                                vnode.component.children[name] = tempComps[name];
-                                areas[name] = tempAreas[name];
-                            }
-                            let names = [];
-                            for (let index in data.current) names.push(data.component.name + ':' + index);
-                            vnode.component.collectChildrenBlocks(names, vnode.data.space);
+                            this.componentSort(key);
                             return;
                         case this.ARRAY_DELETE:
-                            //Удаляем компонент из родителя и его данные
-                            const deleteComp = vnode.component.getChildren()[namePrefix + key];
-                            console.log('OLD', deleteComp);
-                            vnode.component.removeChild(deleteComp, vnode.data.inserted, true);
+                            this.componentDelete(namePrefix + key);
                             if (data.current.length > 1) return;
                             break;
                     }
@@ -279,9 +237,7 @@ class For {
                     let keys = Object.keys(data.current);
                     if (keys.length) {
                         for (const key of keys) {
-                            const name = `${data.component.name}:${key}`;
-                            const component = data.component.clone(name, true, this.getObjectForCycle(data, key));
-                            vnode.component.insertChild(component, vnode.data.space, vnode.data.inserted);
+                            this.componentInsert(key, this.vnode.data.space);
                         }
                         return;
                     }
@@ -292,6 +248,65 @@ class For {
                 vnode.component.replaceChildren([forElse.component], vnode.data.space, vnode.data.inserted);
             }
         });
+    }
+
+    static componentPush(key) {
+        const name = this.namePrefix + key;
+        let before = this.vnode.data.space;
+        if (name in this.vnode.component.children) {
+            before = this.componentDelete(name, true);
+        }
+        this.componentInsert(key, before);
+    }
+
+    static componentDelete(name, getNext = false) {
+        const deleteComp = this.vnode.component.children[name];
+        let el;
+        if (getNext) el = deleteComp.element.nextSibling;
+        this.vnode.component.removeChild(deleteComp, this.vnode.data.inserted, true);
+        return el;
+    }
+
+    static componentInsert(key, space) {
+        const insertComp = this.data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(this.data, key));
+        this.vnode.component.insertChild(insertComp, space, this.vnode.data.inserted);
+    }
+
+    static componentSwap(key1, key2) {
+        const comp1 = this.vnode.component.children[this.namePrefix + key1];
+        const comp2 = this.vnode.component.children[this.namePrefix + key2];
+        this.vnode.component.swapChild(comp1, comp2);
+        comp1.vars[this.data.as[1]||'key'] = key2;
+        comp2.vars[this.data.as[1]||'key'] = key1;
+    }
+
+    static componentSort(keys) {
+        let tempComps = {};
+        let tempAreas = {};
+        const areas = Area.findFull(this.data.component.path.slice(0, -1));
+        for (let i = 0; i < keys.length; i++) {
+            const name = this.namePrefix + keys[i];
+            const value = this.data.current[keys[i]];
+            for (let j = 0; j < keys.length; j++) {
+                if (i === j) continue;
+                const foundName = this.namePrefix + keys[j];
+                const comp = this.vnode.component.children[foundName];
+                if (comp.vars[this.data.as[0]||'item'] === value) {
+                    comp.updateName(name);
+                    comp.vars[this.data.as[1]||'key'] = keys[i];
+                    tempComps[name] = comp;
+                    tempAreas[name] = areas[foundName];
+                    break;
+                }
+            }
+        }
+        for (let name in tempComps) {
+            this.vnode.component.children[name] = tempComps[name];
+            areas[name] = tempAreas[name];
+        }
+        let names = [];
+        for (let index in this.data.current) names.push(this.data.component.name + ':' + index);
+        this.vnode.component.collectChildrenBlocks(names, this.vnode.data.space);
     }
 
     /**
