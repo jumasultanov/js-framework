@@ -79,27 +79,30 @@ class TestController extends Controller {
         const td2 = document.createElement('td');
         const td3 = document.createElement('td');
         const varName = 'users';
-        for (let i in globals.content[varName]) {
-            const item = globals.content[varName][i];
+        for (let i in globals.content) {
+            const item = globals.content[i];
             if (!i.startsWith('#construction:1:')) continue;
             let cell = document.createElement('span');
-            cell.innerHTML = `<b>${i}</b></br> index: ${item.vars.userIndex}; id: ${item.vars.user.id}; name: ${item.vars.user.name} <br>`;
+            cell.innerHTML = `<b>${i}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
             //cell.innerHTML = `<b>${i}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
             td1.appendChild(cell);
         }
-        for (let i in test.content.children[varName].children) {
-            const item = test.content.children[varName].children[i];
+        for (let i in test.content.children) {
+            const item = test.content.children[i];
             if (!i.startsWith('#construction:1:')) continue;
             let cell = document.createElement('span');
-            cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.userIndex}; id: ${item.vars.user.id}; name: ${item.vars.user.name} <br>`;
+            cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
             //cell.innerHTML = `<b>${item.name}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
             td2.appendChild(cell);
         }
-        test.content.children[varName].vdom.items.forEach(vnode => {
+        let i = 0;
+        test.content.vdom.items.forEach(vnode => {
+            if (i > 0) return;
+            i++;
             vnode.data.inserted.forEach(item => {
                 if (!item.name.startsWith('#construction:1:')) return;
                 let cell = document.createElement('span');
-                cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.userIndex}; id: ${item.vars.user.id}; name: ${item.vars.user.name} <br>`;
+                cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
                 //cell.innerHTML = `<b>${item.name}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
                 td3.appendChild(cell);
             });
@@ -108,7 +111,7 @@ class TestController extends Controller {
         tr.appendChild(td2);
         tr.appendChild(td3);
         table.appendChild(tr);
-        console.table(globals.content.vars.countries);
+        console.table(globals.content.vars.numbers);
     }
 }
 

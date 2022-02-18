@@ -22,6 +22,7 @@
                         <p m-else>Preview text not found</p>
                     </div>
                     */?>
+                    <?/*
                     <div class="mb-5" m-block="users:TestController">
                         <ul>
                             <li m-for="(user, userIndex, usersArray) in users">
@@ -38,7 +39,6 @@
                             </li>
                         </ul>
                     </div>
-                    <?/*
                     <div class="mb-5" m-block="users">
                         <ul>
                             <li m-for="(country, countryName, countriesArray) in countries">
@@ -55,36 +55,47 @@
                         </ul>
                     </div>
                     */?>
+                    <div class="mb-5">
+                        <ul>
+                            <li m-for="numbers">
+                                <p style="backgound-color:#fefefe;">
+                                    <span><button @click="delete numbers[key]">X</button></span>
+                                    <span>Index: {{ key }};</span>
+                                    <span>Number: {{ item }};</span>
+                                </p>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
                 <div class="col-5">
-                <?/*
                     <div class="mb-3">
-                        <button @click="countries.brasil = {id: 6, ru: 'Бразилия'};">Push</button>
-                        <button @click="countries.france.id = 99;">Rename</button>
-                        <button @click="countries.france = {id: 50, ru: 'Франция !!!'};">Replace</button>
+                        <button @click="numbers.f = 'hello';">Push</button>
+                        <button @click="numbers.c = 999;">Rename</button>
+                        <button @click="numbers.d = {id: 50, ru: 'Франция !!!'};">Replace</button>
                         <br>
                     </div>
+                <?/*
+                    <div class="mb-3">
+                        <button @click="numbers.push(++count);">Push</button>
+                        <button @click="numbers.pop()">Pop</button>
+                        <button @click="numbers.shift()">Shift</button>
+                        <button @click="numbers.unshift(++count)">Unshift</button>
+                    </div>
+                    <div class="mb-3">
+                        <button @click="numbers.sort((a,b) => a-b)">Sort</button>
+                        <button @click="numbers.reverse()">Reverse</button>
+                    </div>
+                    <div class="mb-3">
+                        <button @click="numbers.splice(2,0,++count)">Splice (add)</button>
+                        <button @click="numbers.splice(1,1,++count)">Splice (replace)</button>
+                        <button @click="numbers.splice(3,1)">Splice (remove)</button>
+                    </div>
+                    <div class="mb-3">
+                        <button @click="numbers.splice(3,2,++count)">Splice (remove more add)</button>
+                        <button @click="numbers.splice(3,1,++count,++count)">Splice (add more remove)</button>
+                    </div>
                     */?>
-                    <div class="mb-3">
-                        <button @click="users.push({id: 8, name: 'Elisabeth '+(++this.count)});">Push</button>
-                        <button @click="users.pop()">Pop</button>
-                        <button @click="users.shift()">Shift</button>
-                        <button @click="users.unshift({id: 99, name: 'Anna '+(++this.count)})">Unshift</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.sort((a,b) => a.id-b.id)">Sort</button>
-                        <button @click="users.reverse()">Reverse</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.splice(2,0,{id:14,name:'Jack '+(++this.count)})">Splice (add)</button>
-                        <button @click="users.splice(1,1,{id:15,name:'Susan '+(++this.count)})">Splice (replace)</button>
-                        <button @click="users.splice(3,1)">Splice (remove)</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.splice(3,2,{id:20,name:'Casie '+(++this.count)})">Splice (remove more add)</button>
-                        <button @click="users.splice(3,1,{id:21,name:'Michael '+(++this.count)},{id:22,name:'Nancy '+(++this.count)})">Splice (add more remove)</button>
-                    </div>
-                    <button @click="changeUser(0)">Change user 1 to Mary</button><br>
+                    <button @click="numbers[0] = {a:1,b:'test'}">Change user 1 to Mary</button><br>
                     <button @click="clear" style="margin-top:20px">Clear</button>
                     <button @click="up" style="margin-top:20px">Update</button>
                 </div>

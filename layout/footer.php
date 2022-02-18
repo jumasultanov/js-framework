@@ -30,7 +30,8 @@
                         germany: {id: 3, ru: 'Германия'},
                         italy: {id: 4, ru: 'Италия'},
                         canada: {id: 5, ru: 'Канада'},
-                    }
+                    },
+                    numbers: {a:30,b:40,c:10,d:100,e:5}
                 },
                 description: {
                     vars: {
