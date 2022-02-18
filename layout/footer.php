@@ -6,7 +6,7 @@
             vars: {
                 param1: 'str',
                 isValid: false,
-                count: 5,
+                count: 0,
                 counter: 100,
                 types: {
                     num: 'number',
@@ -23,7 +23,14 @@
                         {id: 4, name: 'Kate', have: { cat: true, dog: true }},
                         {id: 5, name: 'Scarlet', have: { cat: true, dog: true }},
                         {id: 6, name: 'Piter', have: { cat: true, dog: true }},
-                    ]
+                    ],
+                    countries: {
+                        england: {id: 1, ru: 'Англия'},
+                        france: {id: 2, ru: 'Франция'},
+                        germany: {id: 3, ru: 'Германия'},
+                        italy: {id: 4, ru: 'Италия'},
+                        canada: {id: 5, ru: 'Канада'},
+                    }
                 },
                 description: {
                     vars: {

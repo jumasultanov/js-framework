@@ -61,23 +61,15 @@ class InternalProxy {
      * @returns {object}
      */
     static getRoot(obj) {
-        if (obj instanceof Array) return this.getRootByType('rootArray', true);
-        return this.getRootByType('rootObject', false);
+        const isArray = obj instanceof Array;
+        const root = isArray ? [] : {};
+        Object.defineProperty(root, 'isArray', Helper.getDescriptor(isArray, false, false, false));
+        Object.defineProperty(root, 'isProxy', Helper.getDescriptor(true, false, false, false));
+        return root;
     }
-
-    /**
-     * Возвращает объект с параметрами по умолчанию для определенного типа данных
-     * @param {string} prop Свойство в классе для хранения
-     * @param {boolean} isArray Является ли массивом
-     * @returns {object}
-     */
-    static getRootByType(prop, isArray) {
-        if (!this[prop]) {
-            this[prop] = isArray ? [] : {};
-            Object.defineProperty(this[prop], 'isArray', Helper.getDescriptor(isArray, false, false, false));
-            Object.defineProperty(this[prop], 'isProxy', Helper.getDescriptor(true, false, false, false));
-        }
-        return this[prop];
+    
+    static setIterating(target) {
+        Object.defineProperty(target.__proto__, 'iterating', Helper.getDescriptor(true, true, true, false));
     }
 
 }

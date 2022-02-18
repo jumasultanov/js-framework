@@ -40,11 +40,11 @@ class Area {
         path = this.checkPath(path);
         if (!path) return null;
         let current = this.globals;
-        let last = (current.hasOwnProperty(key) ? current : null);
+        let last = (current.vars.hasOwnProperty(key) ? current : null);
         for (let item of path) {
             if (!(item in current)) break;
             current = current[item];
-            if (current.hasOwnProperty(key)) last = current;
+            if (current.vars.hasOwnProperty(key)) last = current;
         }
         return last;
     }

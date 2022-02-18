@@ -294,7 +294,7 @@ class Component extends BaseComponent {
      */
     enable() {
         if (this.enabled) return;
-        console.log('ENABLE', this.path);
+        //console.log('ENABLE', this.path);
         if (!this.vdom.isActive()) {
             this.vdom.enableReactive();
         }
@@ -306,7 +306,7 @@ class Component extends BaseComponent {
      */
     disable() {
         if (!this.enabled) return;
-        console.log('DISABLE', this.path);
+        //console.log('DISABLE', this.path);
         this.enabled = false;
     }
 

@@ -66,15 +66,17 @@ class For {
      * @param {object} receiver Целевой объект
      */
     static onProxyGet(target, prop) {
-        if (!target.isArray) return undefined;
-        if (!isNaN(Number(prop))) {
-            this.prevPosition = prop;
-        } else if (prop == 'sort') {
-            this.arraySort = [];
-            this.arrayLastIndex = target.length - 1;
-        } else if (prop == 'reverse') {
-            this.arrayReverse = [];
-            this.arrayLength = (target.length % 2 == 0 ? target.length : target.length - 1 );
+        if (!target.iterating) return undefined;
+        if (target.isArray) {
+            if (!isNaN(Number(prop))) {
+                this.prevPosition = prop;
+            } else if (prop == 'sort') {
+                this.arraySort = [];
+                this.arrayLastIndex = target.length - 1;
+            } else if (prop == 'reverse') {
+                this.arrayReverse = [];
+                this.arrayLength = target.length - target.length % 2;
+            }
         }
     }
 
@@ -86,63 +88,74 @@ class For {
      * @param {object} receiver Целевой объект
      */
     static onProxySet(target, prop, val, receiver) {
-        if (!target.isArray) return undefined;
-        //Добавление в массив
-        if (!isNaN(Number(prop))) {
+        if (!target.iterating) return undefined;
+        //Определяем настройки для действий в конце метода
+        let method = null;
+        let key = prop;
+        let changeBefore = true, toProxy = true;
+        if (target.isArray) {
+            //Если свойство не число, то ничего не делаем для массива
+            if (isNaN(Number(prop))) return undefined;
+            //Если ключ не занят, то операция добавления
             if (!(prop in target)) {
-                Reflect.set(target, prop, val, receiver);
                 console.warn('PUSH', prop, val);
-                InternalProxy.one(target, prop);
-                this.arrayChange(target, prop, this.ARRAY_PUSH);
+                method = this.ARRAY_PUSH;
             } else {
-                // TODO: 
-                //      Появляется ошибка Component.js:153 prop 'name' from undefined in component1.name
-                //          при полном очистке либо как-то еще (не удалось отследить)
-                //
-                //      Изменить название класса Directives на Executor
-                //      Отработать события и удаление из элементов при отключении компонентов (может и нет)
-                //      
-                //
-                //      Отработать перебор объектов, чисел и строк
-                //      ---
-                //
+                toProxy = false;
                 if (this.arraySort) {
                     if (target[prop] !== val) this.arraySort.push(prop);
-                    Reflect.set(target, prop, val, receiver);
                     if (prop == this.arrayLastIndex) {
-                        this.arrayChange(target, this.arraySort, this.ARRAY_SORT);
+                        console.warn('SORT', this.arraySort);
+                        key = this.arraySort;
                         this.arraySort = null;
+                        method = this.ARRAY_SORT;
                     }
                 } else if (this.arrayReverse) {
                     this.arrayReverse.push(prop);
-                    Reflect.set(target, prop, val, receiver);
                     if (this.arrayReverse.length == this.arrayLength) {
-                        this.arrayChange(target, this.arrayReverse, this.ARRAY_REVERSE);
+                        console.warn('REVERSE', this.arrayReverse);
+                        key = this.arrayReverse;
                         this.arrayReverse = null;
+                        method = this.ARRAY_REVERSE;
                     }
                 } else {
-                    // Отсюда начинаются перемещения индексов
-                    //console.group('CHANGE INDEX');
-                    console.warn('Move', this.prevPosition + ' -> ' + prop, val);
-                    /*console.log(prop, val);
-                    console.log(target[prop]);
-                    console.groupEnd();*/
                     if (this.prevPosition === null || target[this.prevPosition] !== val) {
-                        console.warn('PASTE NEW', prop, val);
-                        Reflect.set(target, prop, val, receiver);
-                        InternalProxy.one(target, prop);
-                        this.arrayChange(target, prop, this.ARRAY_PUSH);
+                        console.warn('PUSH WITHOUT PREV', prop, val);
+                        toProxy = true;
+                        method = this.ARRAY_PUSH;
                     } else {
-                        console.warn('MOVE', prop, val);
-                        this.arrayChange(target, { value: prop, replace: this.prevPosition }, this.ARRAY_MOVE);
-                        Reflect.set(target, prop, val, receiver);
+                        console.warn('SWAP BEFORE', prop, this.prevPosition);
+                        changeBefore = false;
+                        method = this.ARRAY_MOVE;
+                        key = { value: prop, replace: this.prevPosition };
                     }
                 }
             }
             this.prevPosition = null;
-            return true;
+        } else {
+            console.warn('PUSH', prop, val);
+            method = this.ARRAY_PUSH;
         }
+        //Основные действия
+        let success = false;
+        if (changeBefore) success = Reflect.set(target, prop, val, receiver);
+        if (toProxy) InternalProxy.one(target, prop);
+        if (method !== null) this.arrayChange(target, key, method);
+        if (!changeBefore) success = Reflect.set(target, prop, val, receiver);
+        return success;
     }
+
+// TODO: 
+//      Появляется ошибка Component.js:153 prop 'name' from undefined in component1.name
+//          при полном очистке либо как-то еще (не удалось отследить)
+//
+//      Изменить название класса Directives на Executor
+//      Отработать события и удаление из элементов при отключении компонентов (может и нет)
+//      
+//
+//      Отработать перебор объектов, чисел и строк
+//      ---
+//
 
     /**
      * Событие при удалении свойства из объекта
@@ -151,14 +164,11 @@ class For {
      * @param {object} receiver Целевой объект
      */
     static onProxyDeleteProperty(target, prop, receiver) {
-        if (!target.isArray) return undefined;
-        //Удаление из массива
-        if (!isNaN(Number(prop))) {
-            console.warn('DELETE', prop);
-            console.log(target);
-            this.arrayChange(target, prop, this.ARRAY_DELETE);
-            return Reflect.deleteProperty(target, prop, receiver);
-        }
+        if (!target.iterating) return undefined;
+        if (target.isArray && isNaN(Number(prop))) return undefined;
+        console.warn('DELETE BEFORE', prop);
+        this.arrayChange(target, prop, this.ARRAY_DELETE);
+        return Reflect.deleteProperty(target, prop, receiver);
     }
 
     /**
@@ -188,55 +198,32 @@ class For {
      */
     static constr(vnode) {
         let data = vnode.data.constr.for;
-        const namePrefix = `${data.component.name}:`;
         //Выполнение выражения для цикла
         Directives.expr(data.expr, data, vnode.getVars(), false, params => {
-            console.warn('ARRAY CHANGE', data);
-            console.warn(params);
-            const count = data.current.length;
+            console.table(data.current);
             let forElse;
             //Обощаем данные для конкретного изменения
             this.vnode = vnode;
             this.data = data;
             this.namePrefix = `${data.component.name}:`;
-            //
             if (data.next) forElse = vnode.data.constr[data.next];
             if (data.current instanceof Object) {
+                const count = Object.keys(data.current).length;
                 if (count && forElse && forElse.component.isActive()) {
-                    vnode.component.removeChild(forElse.component);
+                    vnode.component.removeChild(forElse.component, vnode.data.inserted);
                 }
                 if (params && 'change' in params) {
-                    const key = params.index;
-                    switch (params.change) {
-                        case this.ARRAY_PUSH:
-                            this.componentPush(key);
-                            return;
-                        case this.ARRAY_MOVE:
-                            this.componentSwap(key.replace, key.value);
-                            return;
-                        case this.ARRAY_REVERSE:
-                            for (let i = 0; i < key.length; i += 2) {
-                                const first = key[i];
-                                const second = key[i + 1];
-                                this.componentSwap(first, second);
-                            }
-                            return;
-                        case this.ARRAY_SORT:
-                            this.componentSort(key);
-                            return;
-                        case this.ARRAY_DELETE:
-                            this.componentDelete(namePrefix + key);
-                            if (data.current.length > 1) return;
-                            break;
-                    }
+                    this.componentChange(params);
+                    if (count) return;
                 } else {
+                    //Добавляем флаг, что объект будет итерирован
+                    InternalProxy.setIterating(data.current);
                     //Добавляем скрытый метод getWatcher, которая будет вести до родителя оригинального объекта
                     const parent = Area.getOwnKey(data.component.path.slice(0, -1), data.expr);
                     if (parent) InternalProxy.setWatcher(parent.vars, data.expr);
                     //Обновляем весь список
-                    let keys = Object.keys(data.current);
-                    if (keys.length) {
-                        for (const key of keys) {
+                    if (count) {
+                        for (const key in data.current) {
                             this.componentInsert(key, this.vnode.data.space);
                         }
                         return;
@@ -250,6 +237,39 @@ class For {
         });
     }
 
+    /**
+     * Изменение компонентов в перебранном объекте
+     * @param {object} params 
+     */
+    static componentChange(params) {
+        const key = params.index;
+        switch (params.change) {
+            case this.ARRAY_PUSH:
+                this.componentPush(key);
+                break;
+            case this.ARRAY_MOVE:
+                this.componentSwap(key.replace, key.value);
+                break;
+            case this.ARRAY_REVERSE:
+                for (let i = 0; i < key.length; i += 2) {
+                    const first = key[i];
+                    const second = key[i + 1];
+                    this.componentSwap(first, second);
+                }
+                break;
+            case this.ARRAY_SORT:
+                this.componentSort(key);
+                break;
+            case this.ARRAY_DELETE:
+                this.componentDelete(this.namePrefix + key);
+                break;
+        }
+    }
+
+    /**
+     * Вставка компонента с проверкой на место вставки  
+     * @param {string} key 
+     */
     static componentPush(key) {
         const name = this.namePrefix + key;
         let before = this.vnode.data.space;
@@ -259,6 +279,12 @@ class For {
         this.componentInsert(key, before);
     }
 
+    /**
+     * Удаление компонента
+     * @param {string} name Название компонента
+     * @param {boolean} getNext Возвращает следующий элемент после удаленной
+     * @returns {null|Node}
+     */
     static componentDelete(name, getNext = false) {
         const deleteComp = this.vnode.component.children[name];
         let el;
@@ -267,11 +293,21 @@ class For {
         return el;
     }
 
+    /**
+     * Создание и вставка компонента по ключу
+     * @param {string} key 
+     * @param {Node} space Элемент, перед которой будет вставлено
+     */
     static componentInsert(key, space) {
         const insertComp = this.data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(this.data, key));
         this.vnode.component.insertChild(insertComp, space, this.vnode.data.inserted);
     }
 
+    /**
+     * Смена местами двух компонентов
+     * @param {string} key1 
+     * @param {string} key2 
+     */
     static componentSwap(key1, key2) {
         const comp1 = this.vnode.component.children[this.namePrefix + key1];
         const comp2 = this.vnode.component.children[this.namePrefix + key2];
@@ -280,6 +316,10 @@ class For {
         comp2.vars[this.data.as[1]||'key'] = key1;
     }
 
+    /**
+     * Сортировка компонентов по карте
+     * @param {string[]} keys 
+     */
     static componentSort(keys) {
         let tempComps = {};
         let tempAreas = {};

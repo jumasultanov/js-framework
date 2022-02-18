@@ -1,5 +1,5 @@
 <? require('layout/header.php'); ?>
-    <main role="main" m-block="content:TestController">
+    <main role="main" m-block="content:TestController" style="zoom:0.75">
         <div class="container">
             <div class="row">
                 <div class="col-4">
@@ -38,28 +38,55 @@
                             </li>
                         </ul>
                     </div>
+                    <?/*
+                    <div class="mb-5" m-block="users">
+                        <ul>
+                            <li m-for="(country, countryName, countriesArray) in countries">
+                                <p style="backgound-color:#fefefe;">
+                                    <span><button @click="delete countries[countryName];">X</button></span>
+                                    <span>Country: {{ countryName }};</span>
+                                    <span>ID: {{ country.id }};</span>
+                                    <span>RU: {{ country.ru }};</span>
+                                </p>
+                            </li>
+                            <li m-for-else>
+                                <p style="color:#f66;font-weight:bold;">Cities not found</p>
+                            </li>
+                        </ul>
+                    </div>
+                    */?>
                 </div>
                 <div class="col-5">
+                <?/*
                     <div class="mb-3">
-                        <button @click="users.push({id: 8, name: 'Elisabeth'});">Push</button>
+                        <button @click="countries.brasil = {id: 6, ru: 'Бразилия'};">Push</button>
+                        <button @click="countries.france.id = 99;">Rename</button>
+                        <button @click="countries.france = {id: 50, ru: 'Франция !!!'};">Replace</button>
+                        <br>
+                    </div>
+                    */?>
+                    <div class="mb-3">
+                        <button @click="users.push({id: 8, name: 'Elisabeth '+(++this.count)});">Push</button>
                         <button @click="users.pop()">Pop</button>
                         <button @click="users.shift()">Shift</button>
-                        <button @click="users.unshift({id: 99, name: 'Anna'})">Unshift</button>
+                        <button @click="users.unshift({id: 99, name: 'Anna '+(++this.count)})">Unshift</button>
                     </div>
                     <div class="mb-3">
                         <button @click="users.sort((a,b) => a.id-b.id)">Sort</button>
                         <button @click="users.reverse()">Reverse</button>
                     </div>
                     <div class="mb-3">
-                        <button @click="users.splice(2,0,{id:14,name:'Jack'})">Splice (add)</button>
-                        <button @click="users.splice(1,1,{id:15,name:'Susan'})">Splice (replace)</button>
+                        <button @click="users.splice(2,0,{id:14,name:'Jack '+(++this.count)})">Splice (add)</button>
+                        <button @click="users.splice(1,1,{id:15,name:'Susan '+(++this.count)})">Splice (replace)</button>
                         <button @click="users.splice(3,1)">Splice (remove)</button>
                     </div>
                     <div class="mb-3">
-                        <button @click="users.splice(3,2,{id:20,name:'Casie'})">Splice (remove more add)</button>
-                        <button @click="users.splice(3,1,{id:21,name:'Michael'},{id:22,name:'Nancy'})">Splice (add more remove)</button>
+                        <button @click="users.splice(3,2,{id:20,name:'Casie '+(++this.count)})">Splice (remove more add)</button>
+                        <button @click="users.splice(3,1,{id:21,name:'Michael '+(++this.count)},{id:22,name:'Nancy '+(++this.count)})">Splice (add more remove)</button>
                     </div>
-                    <button @click="changeUser(0)">Change user 1 to Mary</button>
+                    <button @click="changeUser(0)">Change user 1 to Mary</button><br>
+                    <button @click="clear" style="margin-top:20px">Clear</button>
+                    <button @click="up" style="margin-top:20px">Update</button>
                 </div>
                 <div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">
@@ -75,6 +102,17 @@
                         <div m-case="107"><span>Count:</span> <b>Сто семь</b></div>
                         <div m-case="108"><span>Count:</span> <b>Сто восемь</b></div>-->
                     </div>
+                </div>
+            </div>
+            <div class="row">
+                <style>
+                    #debug span {
+                        display: block;
+                        margin-bottom: 8px;
+                    }
+                </style>
+                <div class="col">
+                    <table id="debug" cellpadding="10"></table>
                 </div>
             </div>
         </div>
