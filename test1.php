@@ -55,13 +55,11 @@
                         </ul>
                     </div>
                     */?>
-                    <div class="mb-5">
+                    <div class="mb-5" m-block="numeric">
                         <ul>
-                            <li m-for="numbers">
+                            <li m-for="10">
                                 <p style="backgound-color:#fefefe;">
-                                    <span><button @click="delete numbers[key]">X</button></span>
-                                    <span>Index: {{ key }};</span>
-                                    <span>Number: {{ item }};</span>
+                                    <span>Number: {{ n }};</span>
                                 </p>
                             </li>
                         </ul>

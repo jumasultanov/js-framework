@@ -9,11 +9,11 @@ class For {
     //Названия связанных конструкции
     static nextConstructions = ['for-else'];
     //Константы изменения массива
-    static ARRAY_PUSH = 0;
-    static ARRAY_DELETE = 1;
-    static ARRAY_MOVE = 2;
-    static ARRAY_REVERSE = 3;
-    static ARRAY_SORT = 4;
+    static ACTION_PUSH = 0;
+    static ACTION_DELETE = 1;
+    static ACTION_MOVE = 2;
+    static ACTION_REVERSE = 3;
+    static ACTION_SORT = 4;
     //Предыдущее прочитанное свойство массива
     static prevPosition = null;
 
@@ -99,7 +99,7 @@ class For {
             //Если ключ не занят, то операция добавления
             if (!(prop in target)) {
                 console.warn('PUSH', prop, val);
-                method = this.ARRAY_PUSH;
+                method = this.ACTION_PUSH;
             } else {
                 toProxy = false;
                 if (this.arraySort) {
@@ -108,7 +108,7 @@ class For {
                         console.warn('SORT', this.arraySort);
                         key = this.arraySort;
                         this.arraySort = null;
-                        method = this.ARRAY_SORT;
+                        method = this.ACTION_SORT;
                     }
                 } else if (this.arrayReverse) {
                     this.arrayReverse.push(prop);
@@ -116,25 +116,25 @@ class For {
                         console.warn('REVERSE', this.arrayReverse);
                         key = this.arrayReverse;
                         this.arrayReverse = null;
-                        method = this.ARRAY_REVERSE;
+                        method = this.ACTION_REVERSE;
                     }
                 } else {
                     if (this.prevPosition === null || target[this.prevPosition] !== val) {
                         console.warn('PUSH WITHOUT PREV', prop, val);
                         toProxy = true;
-                        method = this.ARRAY_PUSH;
+                        method = this.ACTION_PUSH;
                     } else {
                         console.warn('SWAP BEFORE', prop, this.prevPosition);
                         changeBefore = false;
-                        method = this.ARRAY_MOVE;
-                        key = { value: prop, replace: this.prevPosition };
+                        method = this.ACTION_MOVE;
+                        key = { value: prop, prev: this.prevPosition };
                     }
                 }
             }
             this.prevPosition = null;
         } else {
             console.warn('PUSH', prop, val);
-            method = this.ARRAY_PUSH;
+            method = this.ACTION_PUSH;
         }
         //Основные действия
         let success = false;
@@ -146,14 +146,11 @@ class For {
     }
 
 // TODO: 
-//      Появляется ошибка Component.js:153 prop 'name' from undefined in component1.name
-//          при полном очистке либо как-то еще (не удалось отследить)
 //
 //      Изменить название класса Directives на Executor
 //      Отработать события и удаление из элементов при отключении компонентов (может и нет)
 //      
-//
-//      Отработать перебор чисел в диапазоне (from 5 to 10) или (10)
+//      Отработать перебор одного объекта или массива в нескольких местах
 //      ---
 //
 
@@ -167,7 +164,7 @@ class For {
         if (!target.iterating) return undefined;
         if (target.isArray && isNaN(Number(prop))) return undefined;
         console.warn('DELETE BEFORE', prop);
-        this.arrayChange(target, prop, this.ARRAY_DELETE);
+        this.arrayChange(target, prop, this.ACTION_DELETE);
         return Reflect.deleteProperty(target, prop, receiver);
     }
 
@@ -175,7 +172,7 @@ class For {
      * Вызывает событие изменения в массиве через зарегистрированные зависимости в родительском объекте
      * @param {object} target Перебираемый объект
      * @param {number|object} index Ключ измененного элемента
-     * @param {number} change Константа из this.ARRAY_*
+     * @param {number} change Константа из this.ACTION_*
      */
     static arrayChange(target, index, change) {
         const root = target.getWatcher();
@@ -244,23 +241,23 @@ class For {
     static componentChange(params) {
         const key = params.index;
         switch (params.change) {
-            case this.ARRAY_PUSH:
+            case this.ACTION_PUSH:
                 this.componentPush(key);
                 break;
-            case this.ARRAY_MOVE:
-                this.componentSwap(key.replace, key.value);
+            case this.ACTION_MOVE:
+                this.componentSwap(key.prev, key.value);
                 break;
-            case this.ARRAY_REVERSE:
+            case this.ACTION_REVERSE:
                 for (let i = 0; i < key.length; i += 2) {
                     const first = key[i];
                     const second = key[i + 1];
                     this.componentSwap(first, second);
                 }
                 break;
-            case this.ARRAY_SORT:
+            case this.ACTION_SORT:
                 this.componentSort(key);
                 break;
-            case this.ARRAY_DELETE:
+            case this.ACTION_DELETE:
                 this.componentDelete(this.namePrefix + key);
                 break;
         }

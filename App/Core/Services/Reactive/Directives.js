@@ -1,3 +1,5 @@
+import Area from "../../Area.js";
+
 const call = (expr, ctx) => new Function(`with(this){${`return ${expr}`}}`).bind(ctx)();
 
 class Directives {
@@ -34,6 +36,17 @@ class Directives {
             let val = call(expr, ctx);
             //Если первый раз, то собираем зависимости
             if (params && params.collect) {
+                //Если выражение содержит голые данные
+                if (!this.$target) {
+                    //Создаем для них свое свойство в данных компонента
+                    const defined = Area.define(data.component.path.slice(0, -1), false, val);
+                    //Дополняем текущие данные
+                    this.$target = defined.target;
+                    this.$prop = defined.prop;
+                    data.expr = defined.prop;
+                    expr = defined.prop;
+                    val = defined.value;
+                }
                 //console.log('%c%s', 'font-size:1.4em;color:green;padding:3px 0px 3px 10px', 'GET_DEP: '+this.$prop);
                 //console.log(this.$target.getHandler());
                 if (this.$dep instanceof Function) {
@@ -64,16 +77,6 @@ class Directives {
             this.$dep.func(this.collectParams);
         } else this.$dep(this.collectParams);
     }
-
-    /**
-     * ------------ IMPORTANT ----------------
-     * TODO:
-     *      сначала изменяются данные
-     *      обновляются флаги в Virt.DOM
-     *      потом когда прекращаются изменения, то обновляем DOM
-     *      событие прекращения изменения данных надо будет отловить
-     *      обновление DOM делаем через класс VNode или VDOM
-     */
 
     /**
      * Установка событии

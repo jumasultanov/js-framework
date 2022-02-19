@@ -1,4 +1,4 @@
-import { LocalProxy, Dependency, Helper } from './Service.js';
+import { LocalProxy, InternalProxy, Dependency, Helper } from './Service.js';
 
 class Area {
 
@@ -6,6 +6,8 @@ class Area {
     static globals;
     //Зарезирвированные слова
     static reservedWords = new Set(['vars', 'proxy']);
+    //Иденксы для генерации названии переменных
+    static genIndex = 1;
 
     /**
      * Возвращает прокси по ее пути
@@ -66,6 +68,32 @@ class Area {
             current = current[item];
         }
         return current;
+    }
+
+    /**
+     * Добавляем в область новое свойство
+     * @param {string[]|string} path Путь
+     * @param {string|false} key Название свойства, иначе сгенерируется
+     * @param {any} value Значение
+     * @returns {object}
+     */
+    static define(path, key, value) {
+        if (!key) {
+            //Генерируем новое название
+            key = `_variable${this.genIndex}`;
+            this.genIndex++;
+        }
+        //Получаем область из пути, добавляя переданное свойство
+        let area = Area.find(path, {
+            [key]: value
+        });
+        //Проксируем объекты
+        InternalProxy.one(area.vars, key);
+        return {
+            target: area.vars,
+            prop: key,
+            value: area.vars[key]
+        }
     }
 
     /**
