@@ -1,5 +1,5 @@
 import Directive from "../Directive.js";
-import { Directives } from "../Service.js";
+import { Executor } from "../Service.js";
 
 class Basic {
 
@@ -120,7 +120,7 @@ class Basic {
      */
     static setText(vnode) {
         let data = vnode.data;
-        Directives.expr(data.expr, data, vnode.getVars(), false, () => {
+        Executor.expr(data.expr, data, vnode.getVars(), false, () => {
             vnode.node.text(data.current);
         });
     }
@@ -131,7 +131,7 @@ class Basic {
     static setEvents() {
         for (const name in this.vnode.data.on) {
             const data = this.vnode.data.on[name];
-            Directives.exec('on', this.vnode.node, name, data.expr, this.vnode.getVars());
+            Executor.exec('on', this.vnode.node, name, data.expr, this.vnode.getVars());
         }
     }
 
@@ -141,7 +141,7 @@ class Basic {
     static setAttributes() {
         for (const name in this.vnode.data.attrs) {
             const data = this.vnode.data.attrs[name];
-            Directives.expr(data.expr, data, this.vnode.getVars(), false, () => {
+            Executor.expr(data.expr, data, this.vnode.getVars(), false, () => {
                 this.vnode.node.attr(name, data.current);
             });
         }
@@ -153,7 +153,7 @@ class Basic {
     static setStyles() {
         /*for (const name in this.data.style) {
             const data = this.data.style[name];
-            Directives.exec('bind', this.node, name, data, this.getVars());
+            Executor.exec('bind', this.node, name, data, this.getVars());
         }*/
     }
 
@@ -163,7 +163,7 @@ class Basic {
     static setClasses() {
         /*for (const name in this.data.class) {
             const data = this.data.class[name];
-            Directives.exec('bind', this.node, name, data, this.getVars());
+            Executor.exec('bind', this.node, name, data, this.getVars());
         }*/
     }
 
@@ -173,7 +173,7 @@ class Basic {
     static setProperties() {
         /*for (const name in this.data.props) {
             const data = this.data.props[name];
-            Directives.exec('prop', this.node, name, data, this.getVars());
+            Executor.exec('prop', this.node, name, data, this.getVars());
         }*/
     }
 

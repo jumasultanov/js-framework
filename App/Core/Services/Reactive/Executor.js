@@ -2,7 +2,7 @@ import Area from "../../Area.js";
 
 const call = (expr, ctx) => new Function(`with(this){${`return ${expr}`}}`).bind(ctx)();
 
-class Directives {
+class Executor {
 
     static $dep;
     static collectParams = { collect: true };
@@ -14,7 +14,7 @@ class Directives {
             let method = this[methodName];
             // TODO: Надо будет разобрать события, т.к. пока только они сюда попадают
             //      Изменил $dep1, т.к. иначе они записываются в зависимости, а это не нужно
-            this.$dep1 = () => method(el, name, val, ctx);
+            this.$dep1 = () => method.call(this, el, name, val, ctx);
             let result = this.$dep1();
             this.$dep1 = undefined;
             if (typeof result == undefined) return true;
@@ -92,7 +92,7 @@ class Directives {
         if (!val) val = "''";
         let method = '',
             args = '',
-            match = Directives.methodExpression.exec(val.trim());
+            match = this.methodExpression.exec(val.trim());
         if (match) {
             if (ctx[val.trim()] instanceof Function) {
                 method = match[1];
@@ -107,4 +107,4 @@ class Directives {
 
 }
 
-export default Directives
+export default Executor

@@ -1,5 +1,5 @@
 import Directive from "../Directive.js";
-import { Directives } from "../Service.js";
+import { Executor } from "../Service.js";
 
 class If {
 
@@ -73,7 +73,7 @@ class If {
             //Флаг добавленности в Dependency, первый раз при изменении
             let used = false;
             //Выполнение выражения для условия
-            Directives.expr(data.expr, data, vnode.getVars(), true, () => {
+            Executor.expr(data.expr, data, vnode.getVars(), true, () => {
                 //Если истинно,
                 // то деактивируем функции в Dependency в последующих блоках конструкции и вставляем блок в DOM
                 if (data.current) {

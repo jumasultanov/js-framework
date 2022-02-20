@@ -1,6 +1,6 @@
 import Directive from "../Directive.js";
 import Area from "../Area.js";
-import { Directives, AreaProxy, AreaExpanding } from "../Service.js";
+import { Executor, AreaProxy, AreaExpanding } from "../Service.js";
 
 class For {
 
@@ -99,14 +99,12 @@ class For {
             if (isNaN(Number(prop))) return undefined;
             //Если ключ не занят, то операция добавления
             if (!(prop in target)) {
-                console.warn('PUSH', prop, val);
                 method = this.ACTION_PUSH;
             } else {
                 toProxy = false;
                 if (this.arraySort) {
                     if (target[prop] !== val) this.arraySort.push(prop);
                     if (prop == this.arrayLastIndex) {
-                        console.warn('SORT', this.arraySort);
                         key = this.arraySort;
                         this.arraySort = null;
                         method = this.ACTION_SORT;
@@ -114,18 +112,15 @@ class For {
                 } else if (this.arrayReverse) {
                     this.arrayReverse.push(prop);
                     if (this.arrayReverse.length == this.arrayLength) {
-                        console.warn('REVERSE', this.arrayReverse);
                         key = this.arrayReverse;
                         this.arrayReverse = null;
                         method = this.ACTION_REVERSE;
                     }
                 } else {
                     if (this.prevPosition === null || target[this.prevPosition] !== val) {
-                        console.warn('PUSH WITHOUT PREV', prop, val);
                         toProxy = true;
                         method = this.ACTION_PUSH;
                     } else {
-                        console.warn('SWAP BEFORE', prop, this.prevPosition);
                         changeBefore = false;
                         method = this.ACTION_MOVE;
                         key = { value: prop, prev: this.prevPosition };
@@ -134,7 +129,6 @@ class For {
             }
             this.prevPosition = null;
         } else {
-            console.warn('PUSH', prop, val);
             method = this.ACTION_PUSH;
         }
         //Основные действия
@@ -146,14 +140,6 @@ class For {
         return success;
     }
 
-// TODO: 
-//
-//      Изменить название класса Directives на Executor
-//      Отработать события и удаление из элементов при отключении компонентов (может и нет)
-//      
-//      ---
-//
-
     /**
      * Событие при удалении свойства из объекта
      * @param {object} target Объект
@@ -163,7 +149,6 @@ class For {
     static onProxyDeleteProperty(target, prop, receiver) {
         if (!target.iterating) return undefined;
         if (target.isArray && isNaN(Number(prop))) return undefined;
-        console.warn('DELETE BEFORE', prop);
         this.arrayChange(target, prop, this.ACTION_DELETE);
         return Reflect.deleteProperty(target, prop, receiver);
     }
@@ -196,8 +181,7 @@ class For {
     static constr(vnode) {
         let data = vnode.data.constr.for;
         //Выполнение выражения для цикла
-        Directives.expr(data.expr, data, vnode.getVars(), false, params => {
-            console.table(data.current);
+        Executor.expr(data.expr, data, vnode.getVars(), false, params => {
             let forElse;
             //Обощаем данные для конкретного изменения
             this.vnode = vnode;

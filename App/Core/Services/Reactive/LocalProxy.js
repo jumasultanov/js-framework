@@ -1,5 +1,5 @@
 import Directive from '../../Directive.js';
-import { Directives } from '../../Service.js';
+import { Executor } from '../../Service.js';
 
 class LocalProxy {
 
@@ -11,11 +11,11 @@ class LocalProxy {
      * @returns {any}
      */
     static get(target, prop, receiver) {
-        if (typeof prop !== 'symbol' && Directives.$dep && prop !== 'hasOwnProperty') {
-            if (target.hasOwnProperty(prop) || Directives.$inners) {
-                Directives.$target = target;
-                Directives.$prop = prop;
-                Directives.$inners = true;
+        if (typeof prop !== 'symbol' && Executor.$dep && prop !== 'hasOwnProperty') {
+            if (target.hasOwnProperty(prop) || Executor.$inners) {
+                Executor.$target = target;
+                Executor.$prop = prop;
+                Executor.$inners = true;
             }
         } else {
             //Выполняем частные методы директив
