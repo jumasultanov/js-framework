@@ -104,13 +104,11 @@ class Basic {
         if (vnode.isText) {
             this.setText(vnode);
         } else {
-            this.vnode = vnode;
-            this.setEvents();
-            this.setAttributes();
-            this.setStyles();
-            this.setClasses();
-            this.setProperties();
-            this.vnode = undefined;
+            this.setEvents(vnode);
+            this.setAttributes(vnode);
+            this.setStyles(vnode);
+            this.setClasses(vnode);
+            this.setProperties(vnode);
         }
     }
 
@@ -128,21 +126,21 @@ class Basic {
     /**
      * Установка событии
      */
-    static setEvents() {
-        for (const name in this.vnode.data.on) {
-            const data = this.vnode.data.on[name];
-            Executor.exec('on', this.vnode.node, name, data.expr, this.vnode.getVars());
+    static setEvents(vnode) {
+        for (const name in vnode.data.on) {
+            const data = vnode.data.on[name];
+            Executor.exec('on', vnode.node, name, data.expr, vnode.getVars());
         }
     }
 
     /**
      * Установка атрибутов
      */
-    static setAttributes() {
-        for (const name in this.vnode.data.attrs) {
-            const data = this.vnode.data.attrs[name];
-            Executor.expr(data.expr, data, this.vnode.getVars(), false, () => {
-                this.vnode.node.attr(name, data.current);
+    static setAttributes(vnode) {
+        for (const name in vnode.data.attrs) {
+            const data = vnode.data.attrs[name];
+            Executor.expr(data.expr, data, vnode.getVars(), false, () => {
+                vnode.node.attr(name, data.current);
             });
         }
     }
@@ -150,7 +148,7 @@ class Basic {
     /**
      * Установка стилей
      */
-    static setStyles() {
+    static setStyles(vnode) {
         /*for (const name in this.data.style) {
             const data = this.data.style[name];
             Executor.exec('bind', this.node, name, data, this.getVars());
@@ -160,7 +158,7 @@ class Basic {
     /**
      * Установка классов
      */
-    static setClasses() {
+    static setClasses(vnode) {
         /*for (const name in this.data.class) {
             const data = this.data.class[name];
             Executor.exec('bind', this.node, name, data, this.getVars());
@@ -170,7 +168,7 @@ class Basic {
     /**
      * Установка свойств
      */
-    static setProperties() {
+    static setProperties(vnode) {
         /*for (const name in this.data.props) {
             const data = this.data.props[name];
             Executor.exec('prop', this.node, name, data, this.getVars());

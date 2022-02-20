@@ -3,7 +3,6 @@
         <div class="container">
             <div class="row">
                 <div class="col-4">
-                    <?/*
                     <div class="mb-5" m-block="description:TestController">
                         <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <button @click="click">change INNER {{ customVar3 }}</button>
@@ -21,72 +20,9 @@
                         </p>
                         <p m-else>Preview text not found</p>
                     </div>
-                    */?>
-                    <div class="mb-5" m-block="users:TestController">
-                        <ul>
-                            <li m-for="(user, userIndex, usersArray) in users">
-                                <p style="backgound-color:#fefefe;">
-                                    <span><button @click="removeUser(userIndex)">X: {{ userIndex }}</button></span>
-                                    <span>ID: {{ user.id+'#'+user.id }};</span>
-                                    <span>Name: {{ user.name }}{{ (user.prof?';':'') }}</span>
-                                    <span m-if="user.prof">Prof: {{ user.prof }};</span>
-                                    <span m-if="user.cat">Has cat</span>
-                                </p>
-                            </li>
-                            <li m-for-else>
-                                <p style="color:#f66;font-weight:bold;">Users not found</p>
-                            </li>
-                        </ul>
-                    </div>
-                    <?/*
-                    <div class="mb-5" m-block="users">
-                        <ul>
-                            <li m-for="(country, countryName, countriesArray) in countries">
-                                <p style="backgound-color:#fefefe;">
-                                    <span><button @click="delete countries[countryName];">X</button></span>
-                                    <span>Country: {{ countryName }};</span>
-                                    <span>ID: {{ country.id }};</span>
-                                    <span>RU: {{ country.ru }};</span>
-                                </p>
-                            </li>
-                            <li m-for-else>
-                                <p style="color:#f66;font-weight:bold;">Cities not found</p>
-                            </li>
-                        </ul>
-                    </div>
-                    */?>
                 </div>
                 <div class="col-5">
-                <?/*
-                    <div class="mb-3">
-                        <button @click="numbers.f = 'hello';">Push</button>
-                        <button @click="numbers.c = 999;">Rename</button>
-                        <button @click="numbers.d = {id: 50, ru: 'Франция !!!'};">Replace</button>
-                        <br>
-                    </div>
-                    */?>
-                    <div class="mb-3">
-                        <button @click="users.push({id: 8, name: 'Elisabeth'});">Push</button>
-                        <button @click="users.pop()">Pop</button>
-                        <button @click="users.shift()">Shift</button>
-                        <button @click="users.unshift({id: 99, name: 'Anna'})">Unshift</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.sort((a,b) => a.id-b.id)">Sort</button>
-                        <button @click="users.reverse()">Reverse</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.splice(2,0,{id:14,name:'Jack'})">Splice (add)</button>
-                        <button @click="users.splice(1,1,{id:15,name:'Susan'})">Splice (replace)</button>
-                        <button @click="users.splice(3,1)">Splice (remove)</button>
-                    </div>
-                    <div class="mb-3">
-                        <button @click="users.splice(3,2,{id:20,name:'Casie'})">Splice (remove more add)</button>
-                        <button @click="users.splice(3,1,{id:21,name:'Michael'},{id:22,name:'Nancy'})">Splice (add more remove)</button>
-                    </div>
-                    <button @click="changeUser(0)">Change user 1 to Mary</button>
-                    <button @click="clear" style="margin-top:20px">Clear</button>
-                    <button @click="up" style="margin-top:20px">Update</button>
+                    
                 </div>
                 <div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">
