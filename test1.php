@@ -22,7 +22,7 @@
                     </div>
                 </div>
                 <div class="col-5">
-                    
+                    <button id="test-btn" @click="click">Custom event {{ customVar3 }}</button>
                 </div>
                 <div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">

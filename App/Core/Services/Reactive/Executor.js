@@ -1,26 +1,19 @@
 import Area from "../../Area.js";
 
-const call = (expr, ctx) => new Function(`with(this){${`return ${expr}`}}`).bind(ctx)();
-
 class Executor {
 
     static $dep;
     static collectParams = { collect: true };
 
-    static methodExpression = /^([a-z][\w\.]+)(\(.*\)){0,1}$/i;
-
-    static exec(methodName, el, name, val, ctx) {
-        if (methodName) {
-            let method = this[methodName];
-            // TODO: Надо будет разобрать события, т.к. пока только они сюда попадают
-            //      Изменил $dep1, т.к. иначе они записываются в зависимости, а это не нужно
-            this.$dep1 = () => method.call(this, el, name, val, ctx);
-            let result = this.$dep1();
-            this.$dep1 = undefined;
-            if (typeof result == undefined) return true;
-            return result;
-        }
-        return false;
+    /**
+     * Выполнение кода из строки
+     * @param {string} expr Выполняемый код
+     * @param {object} ctx Данные
+     * @param {boolean} isVoid TRUE - Не возвращать и возможность выполнить более одной инструкции, FALSE - Возвращает результат одной инструкции
+     * @returns {any}
+     */
+    static call(expr, ctx, isVoid = false) {
+        return new Function(`with(this){${isVoid?'':'return '}${expr}}`).bind(ctx)();
     }
 
     /**
@@ -33,7 +26,7 @@ class Executor {
      */
     static expr(expr, data, ctx, disactivable = false, callback = null) {
         this.$dep = params => {
-            let val = call(expr, ctx);
+            let val = this.call(expr, ctx, false);
             //Если первый раз, то собираем зависимости
             if (params && params.collect) {
                 //Если выражение содержит голые данные
@@ -42,24 +35,12 @@ class Executor {
                     const defined = Area.define(data.component.path.slice(0, -1), false, val);
                     //Дополняем текущие данные
                     this.$target = defined.target;
-                    this.$prop = defined.prop;
-                    data.expr = defined.prop;
-                    expr = defined.prop;
+                    this.$prop = data.expr = expr = defined.prop;
                     val = defined.value;
                 }
-                //console.log('%c%s', 'font-size:1.4em;color:green;padding:3px 0px 3px 10px', 'GET_DEP: '+this.$prop);
-                //console.log(this.$target.getHandler());
-                if (this.$dep instanceof Function) {
-                    this.$target.getHandler().add(this.$prop, this.$dep);
-                } else if (this.$dep instanceof Object) {
-                    this.$target.getHandler().add(this.$prop, this.$dep.func, this.$dep.use);
-                }
-                //После выполнения выражения очищаем флаги, чтобы не мешало последующим
-                this.$dep = undefined;
-                this.$prop = undefined;
-                this.$target = undefined;
+                //Сохраняем текущую функцию
+                this.saveDependency();
             }
-            //console.log('%c%s', 'font-size:1.4em;color:#f66;padding:3px 0px 3px 10px;', expr.trim()+' -> '+JSON.stringify(val));
             //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
             //Если изменилось или грубо нужно обновить, изменяем значение и вызываем колбэк
@@ -68,6 +49,16 @@ class Executor {
                 if (callback) callback(params);
             }
         }
+        //Первый запуск функции
+        this.callDep(data, disactivable);
+    }
+
+    /**
+     * Запуск функции для ее сохранения в зависимостях и выполнения конструкции
+     * @param {object} data Данные выражения
+     * @param {boolean} disactivable Отключаемая функция в Dependency
+     */
+    static callDep(data, disactivable) {
         //Если зависимость может быть отключена, актуально для IF, SWITCH
         if (disactivable) {
             this.$dep = { 
@@ -79,30 +70,19 @@ class Executor {
     }
 
     /**
-     * Установка событии
-     * @param {NodeElement} el Элемент прослушки
-     * @param {string} name Название события
-     * @param {string} val Название метода в объекте данных
-     * @param {object|null} ctx Объект данных
+     * Сохранение в функции в зависимостях
      */
-    static on(el, name, val, ctx) {
-        // TODO: add modes for events, example: @click.mode="click"
-        // Сразу фиксируется функция события, 
-        // не предполагает будущих изменении на другие функции
-        if (!val) val = "''";
-        let method = '',
-            args = '',
-            match = this.methodExpression.exec(val.trim());
-        if (match) {
-            if (ctx[val.trim()] instanceof Function) {
-                method = match[1];
-                args = match[2]||'(event)';
-            }
+    static saveDependency() {
+        //Получаем объект зависимости и записываем в нее функцию
+        if (this.$dep instanceof Function) {
+            this.$target.getHandler().add(this.$prop, this.$dep);
+        } else if (this.$dep instanceof Object) {
+            this.$target.getHandler().add(this.$prop, this.$dep.func, this.$dep.use);
         }
-        el.getNode()[`on${name}`] = () => {
-            if (method) return call(`${method}.call(this, ${args.substring(1, args.length - 1)})`, ctx);
-            return call(val, ctx);
-        };
+        //После сохранения функции очищаем свойства, чтобы не мешало последующим сохранениям
+        this.$dep = undefined;
+        this.$prop = undefined;
+        this.$target = undefined;
     }
 
 }

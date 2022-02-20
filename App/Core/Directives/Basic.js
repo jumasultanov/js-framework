@@ -5,6 +5,8 @@ class Basic {
 
     //Название конструкции
     static name = 'basic';
+    //Для извлечения выражении события
+    static methodNameExpression = /^[a-z][\w\.]*$/i;
 
     /**
      * Регистрация директивы
@@ -43,6 +45,10 @@ class Basic {
      * @param {object} data Данные конструкции
      */
     static onParseEvent(attr, value, data) {
+        value = value.trim();
+        if (this.methodNameExpression.test(value)) {
+            value += '(event)';
+        }
         data.on[attr] = { expr: value/*, mods: []*/ };
     }
 
@@ -112,6 +118,11 @@ class Basic {
         }
     }
 
+    // TODO: Возможно понадобятся при деактивации компонентов
+    static onStop(vnode) {
+        this.setEvents(vnode, true);
+    }
+
     /**
      * Установка текста
      * @param {VNode} vnode 
@@ -125,12 +136,38 @@ class Basic {
 
     /**
      * Установка событии
+     * @param {VNode} vnode 
+     * @param {boolean} remove Нужно ли удалить
      */
-    static setEvents(vnode) {
+    static setEvents(vnode, remove = false) {
         for (const name in vnode.data.on) {
-            const data = vnode.data.on[name];
-            Executor.exec('on', vnode.node, name, data.expr, vnode.getVars());
+            if (remove) this.unsetEvent(name, vnode);
+            else this.setEvent(name, vnode);
         }
+    }
+
+    /**
+     * Установка события
+     * @param {string} name Название события
+     * @param {VNode} vnode 
+     */
+    static setEvent(name, vnode) {
+        // TODO: добавить режимы для событии, пример: @click.prevent="click"
+        const data = vnode.data.on[name];
+        vnode.node.getNode().addEventListener(name, data.handler = event => {
+            Executor.call(data.expr, vnode.getVars(), true);
+        });
+    }
+
+    /**
+     * Удаление события
+     * @param {string} name Название события
+     * @param {VNode} vnode 
+     */
+    static unsetEvent(name, vnode) {
+        const data = vnode.data.on[name];
+        vnode.node.getNode().removeEventListener(name, data.handler);
+        delete data.handler;
     }
 
     /**
