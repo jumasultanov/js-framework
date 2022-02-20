@@ -1,5 +1,5 @@
 import Component from '../../Component.js';
-import { Helper } from '../../Service.js';
+import { AreaExpanding } from '../../Service.js';
 
 class Dependency {
 
@@ -91,9 +91,7 @@ class Dependency {
         const dependency = new this(component);
         //Если компонент, то связываем
         if (component instanceof Component) component.setDependency(dependency);
-        // Указываем невидимый метод для объекта данных
-        const descriptor = Helper.getDescriptor(() => dependency, false, false, false);
-        Object.defineProperty(vars, 'getHandler', descriptor);
+        AreaExpanding.setHandler(vars, dependency);
     }
 
 }

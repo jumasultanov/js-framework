@@ -1,6 +1,6 @@
 import Directive from "../Directive.js";
 import Area from "../Area.js";
-import { Directives, InternalProxy } from "../Service.js";
+import { Directives, AreaProxy, AreaExpanding } from "../Service.js";
 
 class For {
 
@@ -51,6 +51,7 @@ class For {
         let as = [];
         if (expr.indexOf(' in ') != -1) {
             [as, expr] = expr.split(' in ');
+            expr = expr.trim();
             as = as.replace(/[\(\)\s]/g, '').split(',');
         }
         data.as = as;
@@ -139,7 +140,7 @@ class For {
         //Основные действия
         let success = false;
         if (changeBefore) success = Reflect.set(target, prop, val, receiver);
-        if (toProxy) InternalProxy.one(target, prop);
+        if (toProxy) AreaProxy.one(target, prop);
         if (method !== null) this.arrayChange(target, key, method);
         if (!changeBefore) success = Reflect.set(target, prop, val, receiver);
         return success;
@@ -150,7 +151,6 @@ class For {
 //      Изменить название класса Directives на Executor
 //      Отработать события и удаление из элементов при отключении компонентов (может и нет)
 //      
-//      Отработать перебор одного объекта или массива в нескольких местах
 //      ---
 //
 
@@ -211,13 +211,13 @@ class For {
                 }
                 if (params && 'change' in params) {
                     this.componentChange(params);
-                    if (count) return;
+                    if (params.change !== this.ACTION_DELETE || count > 1) return;
                 } else {
                     //Добавляем флаг, что объект будет итерирован
-                    InternalProxy.setIterating(data.current);
+                    AreaExpanding.setIterating(data.current);
                     //Добавляем скрытый метод getWatcher, которая будет вести до родителя оригинального объекта
                     const parent = Area.getOwnKey(data.component.path.slice(0, -1), data.expr);
-                    if (parent) InternalProxy.setWatcher(parent.vars, data.expr);
+                    if (parent) AreaExpanding.setWatcher(parent.vars, data.expr);
                     //Обновляем весь список
                     if (count) {
                         for (const key in data.current) {

@@ -1,4 +1,4 @@
-import { LocalProxy, InternalProxy, Dependency, Helper } from './Service.js';
+import { AreaProxy, Dependency, Helper } from './Service.js';
 
 class Area {
 
@@ -84,11 +84,11 @@ class Area {
             this.genIndex++;
         }
         //Получаем область из пути, добавляя переданное свойство
-        let area = Area.find(path, {
+        let area = this.find(path, {
             [key]: value
         });
         //Проксируем объекты
-        InternalProxy.one(area.vars, key);
+        AreaProxy.one(area.vars, key);
         return {
             target: area.vars,
             prop: key,
@@ -101,7 +101,7 @@ class Area {
      * @param {string[]|string} path Путь
      */
     static delete(path) {
-        const area = Area.findFull(path.slice(0, -1));
+        const area = this.findFull(path.slice(0, -1));
         if (!area) return;
         delete area[path[path.length - 1]];
     }
@@ -112,7 +112,7 @@ class Area {
      * @param {string[]|string} path2 
      */
     static move(path1, path2) {
-        const area = Area.findFull(path1.slice(0, -1));
+        const area = this.findFull(path1.slice(0, -1));
         if (!area) return;
         const oldName = path1[path1.length - 1];
         const newName = path2[path2.length - 1];
@@ -127,7 +127,7 @@ class Area {
      * @returns {object}
      */
     static empty(parentProxy = null) {
-        const { proxy, vars } = LocalProxy.on({});
+        const { proxy, vars } = AreaProxy.on({});
         if (parentProxy) proxy.__proto__ = parentProxy;
         return { proxy, vars };
     }
@@ -166,7 +166,7 @@ class Area {
         if (object instanceof Array) return;
         if (!('vars' in object)) return;
         //Создание прокси и указание родителя
-        const { proxy, vars } = LocalProxy.on(object.vars);
+        const { proxy, vars } = AreaProxy.on(object.vars);
         if (parent) proxy.__proto__ = parent;
         object.proxy = proxy;
         object.vars = vars;

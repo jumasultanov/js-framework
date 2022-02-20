@@ -1,22 +1,7 @@
 import Directive from '../../Directive.js';
-import { Directives, InternalProxy } from '../../Service.js';
+import { Directives } from '../../Service.js';
 
 class LocalProxy {
-    
-    /**
-     * Возвращает прокси для объекта
-     * @param {object} vars Проксируемый объект
-     * @returns {object}
-     */
-    static on(vars) {
-        //Проксируем основной объект и возвращаем оба варианта
-        const proxy = new Proxy(vars, this);
-        //Добавляем скрытый метод добавления свойства
-        InternalProxy.setCreate(vars);
-        //Проксируем вложенные объекты
-        InternalProxy.on(vars);
-        return { proxy, vars };
-    }
 
     /**
      * Чтение свойства объекта
