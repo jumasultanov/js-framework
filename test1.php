@@ -1,5 +1,5 @@
 <? require('layout/header.php'); ?>
-    <main role="main" m-block="content:TestController" style="zoom:0.75">
+    <main role="main" m-block="content:TestController">
         <div class="container">
             <div class="row">
                 <div class="col-4">

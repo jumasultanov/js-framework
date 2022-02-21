@@ -32,12 +32,23 @@ class VDOM {
     }
 
     /**
+     * Остановка реактивности
+     */
+    disableReactive() {
+        this.enabled = false;
+        this.directives(this.items, true);
+    }
+
+    /**
      * Запуск выражении VNode
      * @param {VNode[]} children 
      */
-    directives(children) {
+    directives(children, unset = false) {
         if (!children.size) return;
-        for (const child of children) child.setDirectives();
+        for (const child of children) {
+            if (unset) child.unsetDirectives();
+            else child.setDirectives();
+        }
     }
 
 }

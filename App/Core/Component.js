@@ -46,6 +46,19 @@ class Component extends BaseComponent {
     }
 
     /**
+     * Конец работы компонента
+     */
+    unbuild() {
+        let parent = Component.find(this.path.slice(0, -1));
+        Component.die(this);
+        if (parent) {
+            delete parent.children[this.name];
+        } else if (this.name in Component.items) {
+            delete Component.items[this.name];
+        }
+    }
+
+    /**
      * Определяем область данных для компонента
      * @param {object|null} defaultVars Доп.данные
      * @returns {this}
@@ -294,7 +307,6 @@ class Component extends BaseComponent {
      */
     enable() {
         if (this.enabled) return;
-        //console.log('ENABLE', this.path);
         if (!this.vdom.isActive()) {
             this.vdom.enableReactive();
         }
@@ -306,12 +318,27 @@ class Component extends BaseComponent {
      */
     disable() {
         if (!this.enabled) return;
-        //console.log('DISABLE', this.path);
         this.enabled = false;
     }
 
+    /**
+     * Уничтожение компонента,
+     *      вызывать из BaseComponent,
+     *      т.к. тут одиночное удаление без прохода по дочерним компонентам
+     */
     die() {
-        // TODO: Удалить все связанные в других местах объекты
+        this.enabled = false;
+        //Удаляем область данных
+        Area.delete(this.path);
+        this.vars = null;
+        //Удаляем ссылку на зависимости
+        this.dependency = null;
+        //Удаляем реактивность
+        this.vdom.disableReactive();
+        this.vdom = null;
+        //Удаляем из DOM
+        Block.remove(this.element);
+        this.element = null;
     }
 
 }

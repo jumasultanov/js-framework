@@ -28,7 +28,7 @@ class VNode {
 
     /**
      * Возвращает объект с данными
-     * @returns {object}
+     * @returns {object|null}
      */
     getVars() {
         if (this.component instanceof Component) return this.component.getVars();
@@ -37,13 +37,23 @@ class VNode {
 
     /**
      * Вычисляем выражения и отслеживаем изменения
-     * @returns {VNode|null}
      */
     setDirectives() {
         if (this.isConstr) {
             Directive.onName(this.data.constrName, 'onExecute', this);
         } else {
             Directive.onName('basic', 'onExecute', this);
+        }
+    }
+
+    /**
+     * Отключаем директивы
+     */
+    unsetDirectives() {
+        if (this.isConstr) {
+            Directive.onName(this.data.constrName, 'onDestroy', this);
+        } else {
+            Directive.onName('basic', 'onDestroy', this);
         }
     }
 

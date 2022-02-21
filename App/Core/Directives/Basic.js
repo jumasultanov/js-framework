@@ -17,7 +17,8 @@ class Basic {
             .include('onParse', this)
             .include('onParseEvent', this)
             .include('onParseText', this)
-            .include('onExecute', this);
+            .include('onExecute', this)
+            .include('onDestroy', this);
     }
 
     /**
@@ -118,8 +119,11 @@ class Basic {
         }
     }
 
-    // TODO: Возможно понадобятся при деактивации компонентов
-    static onStop(vnode) {
+    /**
+     * Событие при уничтожении конструкции
+     * @param {VNode} vnode 
+     */
+    static onDestroy(vnode) {
         this.setEvents(vnode, true);
     }
 

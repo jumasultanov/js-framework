@@ -7,6 +7,10 @@ class BaseComponent {
     static count = 0;
     static currentComplete = -1;
 
+    static ACTION_ENABLE = 0;
+    static ACTION_DISABLE = 1;
+    static ACTION_DIE = 2;
+
     /**
      * 
      * @param {*} path 
@@ -94,7 +98,7 @@ class BaseComponent {
         this.currentComplete++;
         if (this.currentComplete == this.count) {
             try {
-                this.enableAll(this.items);
+                this.actionAll(this.items, this.ACTION_ENABLE);
             } catch (err) {
                 Log.send(
                     [`Cannot enable`, err.message],
@@ -106,25 +110,21 @@ class BaseComponent {
     }
     
     /**
-     * Активируем все компоненты
-     * @param {Object} items Список компонентов
+     * Действие над всеми компонентами
+     * @param {Object} components Список компонентов
      */
-    static enableAll(items) {
-        if (items instanceof Object) {
-            for (const component of Object.values(items)) {
-                this.enable(component);
-            }
-        }
-    }
-    
-    /**
-     * Деактивируем все компоненты
-     * @param {Object} items Список компонентов
-     */
-    static disableAll(items) {
-        if (items instanceof Object) {
-            for (const component of Object.values(items)) {
-                this.disable(component);
+    static actionAll(components, action) {
+        if (components instanceof Object) {
+            for (const name in components) {
+                const comp = components[name];
+                switch (action) {
+                    case this.ACTION_ENABLE:    this.enable(comp); break;
+                    case this.ACTION_DISABLE:   this.disable(comp); break;
+                    case this.ACTION_DIE:
+                        this.die(comp);
+                        delete components[name];
+                        break;
+                }
             }
         }
     }
@@ -135,7 +135,7 @@ class BaseComponent {
      */
     static enable(component) {
         component.enable();
-        this.enableAll(component.getChildren());
+        this.actionAll(component.getChildren(), this.ACTION_ENABLE);
     }
 
     /**
@@ -144,7 +144,16 @@ class BaseComponent {
      */
     static disable(component) {
         component.disable();
-        this.disableAll(component.getChildren());
+        this.actionAll(component.getChildren(), this.ACTION_DISABLE);
+    }
+
+    /**
+     * Уничтожаем компонент
+     * @param {Component} component 
+     */
+    static die(component) {
+        this.actionAll(component.getChildren(), this.ACTION_DIE);
+        component.die();
     }
 
 }
