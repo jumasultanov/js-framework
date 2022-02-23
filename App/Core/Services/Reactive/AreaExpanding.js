@@ -1,6 +1,20 @@
-import { Helper } from '../../Service.js';
+import { Helper, AreaProxy } from '../../Service.js';
 
 class AreaExpanding {
+
+    /**
+     * Добавление скрытого метода для объекта, который возвращает оригинальный объект свойства
+     * @param {object} vars Целевой объект
+     */
+    static setOrigin(vars) {
+        Object.defineProperty(vars, 'getOrigin',
+            Helper.getDescriptor(function(prop) {
+                if (this.hasOwnProperty(prop)) return this;
+                if (!this.__proto__.hasOwnProperty('getOrigin')) return null;
+                return this.__proto__.getOrigin(prop);
+            }, false, false, false)
+        );
+    }
 
     /**
      * Добавление скрытого метода для объекта, который возвращает объект зависимостей
@@ -31,8 +45,9 @@ class AreaExpanding {
      */
     static setCreate(vars) {
         //Добавляем скрытый метод добавления свойства
-        const descriptorCreate = Helper.getDescriptor((prop, val) => {
-            Object.defineProperty(vars, prop, Helper.getDescriptor(val));
+        const descriptorCreate = Helper.getDescriptor((prop, val, active = true) => {
+            Object.defineProperty(vars, prop, Helper.getDescriptor(val, active, active, active));
+            if (active) AreaProxy.one(vars, prop);
         }, false, false, false);
         Object.defineProperty(vars, '$create', descriptorCreate);
     }

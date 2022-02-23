@@ -45,9 +45,10 @@ class LocalProxy {
         if (result !== undefined) return result;
         //Если изменилось настоящее свойство объекта, то проверку проходит
         if (target.hasOwnProperty(prop)) {
+            const oldValue = target[prop];
             const result = Reflect.set(target, prop, val, receiver);
             //Выполняем все функции зависимости (слушатели прокси)
-            if (result) target.getHandler().call(prop);
+            if (result) target.getHandler().call(prop, target[prop], oldValue);
             return result;
         } else { //Иначе изменяем в родительском объекте, пока не дойдем до свойства
             if (prop in target) {
@@ -68,9 +69,9 @@ class LocalProxy {
      */
     static deleteProperty(target, prop, receiver) {
         //Выполняем частные методы директив
-        const result = Directive.on('onProxyDeleteProperty', target, prop, receiver);
-        if (result !== undefined) return result;
-        return Reflect.deleteProperty(target, prop, receiver);
+        let result = Directive.on('onProxyDeleteProperty', target, prop, receiver);
+        if (result === undefined) result = Reflect.deleteProperty(target, prop, receiver);
+        return result;
     }
 
 }

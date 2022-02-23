@@ -5,7 +5,7 @@
                 <div class="col-4">
                     <div class="mb-5" m-block="description:TestController">
                         <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
-                        <button @click="click">change INNER {{ customVar3 }}</button>
+                        <button @click="click">change INNER {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
                         
                         <p m-if="counter < 103 || counter > 112" style="color:green">less 103 or more 110: <b>{{ counter }}</b></p>
                         <p m-else-if="counter < 106 || counter > 110" style="color:blue">less 106 or more 110: <b>{{ counter }}</b></p>
@@ -22,7 +22,8 @@
                     </div>
                 </div>
                 <div class="col-5">
-                    <button id="test-btn" @click="click">Custom event {{ customVar3 }}</button>
+                    <button id="test-btn" @click="click">Custom event {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
+                    <span m-for="nums">{{ item }}, </span>
                 </div>
                 <div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">

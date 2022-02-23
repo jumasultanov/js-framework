@@ -23,10 +23,15 @@ class Component extends BaseComponent {
     vdom;
     //Данные(переменные) блока
     vars;
+    origin;
     //Флаг активности
     enabled = false;
     //Объект зависимых полей и их функции для геттеров и сеттеров прокси
     dependency;
+    //Наблюдатели
+    watchers = {};
+    //Использованные ИД и их зависимости
+    usedDeps = {};
 
     constructor(data) {
         super();
@@ -59,6 +64,14 @@ class Component extends BaseComponent {
     }
 
     /**
+     * Проверка на доступность
+     * @returns {boolean}
+     */
+    isDestroyed() {
+        return !this.vdom;
+    }
+
+    /**
      * Определяем область данных для компонента
      * @param {object|null} defaultVars Доп.данные
      * @returns {this}
@@ -66,7 +79,13 @@ class Component extends BaseComponent {
     defineArea(defaultVars = null) {
         let { proxy, vars } = Area.find(this.path, defaultVars);
         this.vars = proxy;
-        this.controllers.forEach(controller => controller.mergeTo(vars));
+        this.origin = vars;
+        //Сохраняем компонент в объекте данных
+        if (!vars.hasOwnProperty('$component')) {
+            vars.$create('$component', this, false);
+        }
+        //Переносим данные с контроллера
+        this.controllers.forEach(controller => controller.mergeTo(vars, this));
         //Для объекта данных делаем предустановки для зависимостей прокси
         Dependency.define(vars, this);
         return this;
@@ -86,6 +105,49 @@ class Component extends BaseComponent {
      */
     setDependency(dependency) {
         this.dependency = dependency;
+    }
+
+    /**
+     * Добавление связи с зависимостью выше по структуре
+     * @param {Dependency} dependency Объект зависимости
+     * @param {Number} id ИД наблюдателя
+     */
+    addUsedDeps(dependency, id) {
+        this.usedDeps[id] = dependency;
+    }
+
+    /**
+     * Удаление наблюдателей из зависимотей выше по структуре
+     */
+    clearUsedDeps() {
+        for (const id in this.usedDeps) {
+            this.usedDeps[id].remove(id);
+        }
+        this.usedDeps = {};
+    }
+
+    /**
+     * Сохранение наблюдателя за свойством во временный список
+     * @param {string} methodName Имя свойства
+     * @param {function} method Наблюдатель
+     */
+    saveWatcher(methodName, method) {
+        this.watchers[methodName] = {
+            context: this.vars,
+            method
+        };
+    }
+
+    /**
+     * Вставка наблюдателей в объект зависимости
+     */
+    insertWatchers() {
+        for (let methodName in this.watchers) {
+            const dependency = this.origin.getOrigin(methodName).getHandler();
+            const inserted = dependency.add(methodName, this.watchers[methodName]);
+            this.addUsedDeps(dependency, inserted);
+        }
+        this.watchers = {};
     }
 
     /**
@@ -179,17 +241,16 @@ class Component extends BaseComponent {
      * Удаляет дочерний компонент с удалением из DOM
      * @param {Component} component Удаляемый компонент
      * @param {Set|null} inserted Список уже вставленных компонентов
-     * @param {boolean} withData Удалять ли данные
+     * @param {boolean} die Удалять ли данные
      */
-    removeChild(component, inserted = null, withData = false) {
+    removeChild(component, inserted = null, die = false) {
         delete this.children[component.name];
         if (inserted) inserted.delete(component);
         //Удаляем элементы из DOM
         Block.remove(component.element);
-        //Выключаем
-        Component.disable(component);
-        //Удаляем данные, если нужно
-        if (withData) Area.delete(component.path);
+        //Удаляем данные, если нужно, иначе выключаем
+        if (die) Component.die(component);
+        else Component.disable(component);
     }
 
     /**
@@ -307,10 +368,12 @@ class Component extends BaseComponent {
      */
     enable() {
         if (this.enabled) return;
-        if (!this.vdom.isActive()) {
-            this.vdom.enableReactive();
-        }
         this.enabled = true;
+        if (!this.vdom.isActive()) {
+            this.insertWatchers();
+            this.vdom.enableReactive();
+            if (this.vars.hasOwnProperty('mounted')) this.vars.mounted();
+        }
     }
     
     /**
@@ -327,18 +390,27 @@ class Component extends BaseComponent {
      *      т.к. тут одиночное удаление без прохода по дочерним компонентам
      */
     die() {
+        console.warn(this.path.join(' -> '));
+        console.log(this);
+        //Вызываем событие перед уничтожением
+        if (this.vars.hasOwnProperty('beforeDestroy')) this.vars.beforeDestroy();
         this.enabled = false;
         //Удаляем область данных
         Area.delete(this.path);
-        this.vars = null;
-        //Удаляем ссылку на зависимости
-        this.dependency = null;
+        //Удаляем наблюдателей из зависимостей выше в структуре данных
+        this.clearUsedDeps();
         //Удаляем реактивность
         this.vdom.disableReactive();
-        this.vdom = null;
         //Удаляем из DOM
         Block.remove(this.element);
+        //Вызываем событие после уничтожения
+        if (this.vars.hasOwnProperty('destroyed')) this.vars.destroyed();
+        //Обнуляем ссылки на объекты
+        this.dependency = null;
+        this.vdom = null;
         this.element = null;
+        this.vars = null;
+        this.origin = null;
     }
 
 }

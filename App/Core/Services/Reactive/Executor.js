@@ -39,7 +39,7 @@ class Executor {
                     val = defined.value;
                 }
                 //Сохраняем текущую функцию
-                this.saveDependency();
+                this.saveDependency(ctx);
             }
             //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
@@ -72,13 +72,17 @@ class Executor {
     /**
      * Сохранение в функции в зависимостях
      */
-    static saveDependency() {
+    static saveDependency(ctx) {
+        let inserted;
+        let dependency = this.$target.getHandler();
         //Получаем объект зависимости и записываем в нее функцию
         if (this.$dep instanceof Function) {
-            this.$target.getHandler().add(this.$prop, this.$dep);
+            inserted = dependency.add(this.$prop, this.$dep);
         } else if (this.$dep instanceof Object) {
-            this.$target.getHandler().add(this.$prop, this.$dep.func, this.$dep.use);
+            inserted = dependency.add(this.$prop, this.$dep.func, this.$dep.use);
         }
+        //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
+        ctx.$component.addUsedDeps(dependency, inserted);
         //После сохранения функции очищаем свойства, чтобы не мешало последующим сохранениям
         this.$dep = undefined;
         this.$prop = undefined;

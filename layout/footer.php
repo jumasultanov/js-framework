@@ -16,7 +16,7 @@
             },
             content: {
                 vars: {
-                    
+                    nums: [5,6,7]
                 },
                 description: {
                     vars: {

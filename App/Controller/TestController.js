@@ -4,8 +4,12 @@ import Controller from '../Core/Controller.js';
  * Контроллер для блоков
  * 
  *      Event life cycle
+ *          constructor
+ *          created
  *          mounted
- *          unMounted
+ *          updated
+ *          beforeDestroy
+ *          destroyed
  * 
  *      Custom methods
  *          ---
@@ -18,100 +22,78 @@ import Controller from '../Core/Controller.js';
 class TestController extends Controller {
 
     customVar1 = true;
-    customVar2 = false;
+    customVar2 = 10;
     customVar3 = 888;
+    big = {
+        items: ['a', 'b', 'c'],
+        _items: [
+            {id: 1, name: 'a'},
+            {id: 2, name: 'b'},
+            {id: 3, name: 'c'},
+        ],
+        elements: {
+            a: {id: 1},
+            b: {id: 2},
+            c: {id: 3},
+        },
+        current: 1,
+        callback() {
+            console.log(this);
+        }
+    }
 
+    //Срабатывает перед слиянием с компонентом beforeCreateComponent
+    //  Контекст {this} - текущий объект контроллера
     constructor() {
         super();
-        //console.log('START TestController');
+        console.log('START TestController', this);
+    }
+
+    //Срабатывает после связки с компонентом
+    //  Контекст {this} - объект данных с текущими свойствами и методами и с компонентом
+    created() {
+        console.log('Created', this);
+    }
+
+    //Срабатывает после включения компонента
+    mounted() {
+        console.log('Mounted', this);
+        //this.customVar3 = 1000;
+    }
+
+    //Срабатывает после обновления данных компонента и внесения его в DOM
+    updated() {
+        // TODO: 
+        console.log('Updated', this);
+    }
+
+    //Срабатывает перед уничтожением компонента
+    beforeDestroy() {
+        console.log('Before destroy');
+    }
+
+    //Срабатывает после уничтожения компонента
+    destroyed() {
+        console.log('Destroyed');
+    }
+
+    //Срабатывает после изменения свойства "customVar3"
+    watchCustomVar3(value, old) {
+        console.log('Change CustomVar3');
+        console.log(value, old);
+        console.log(this);
+        this.customVar2 += 10;
+    }
+
+    watchCounter(value, old) {
+        console.log('Change counter');
+        console.log(value, old);
+        console.log(this);
     }
 
     click(ev) {
-        //console.log(ev);
-        //console.log('Click', this);
-        //this.counter += 10;
         this.customVar3 -= 8;
-    }
-
-    mounted() {
-        console.log('Mounted');
-    }
-    
-    unmounted() {
-        console.log('UnMounted');
-    }
-
-    watchCustomVar1(value, old) {
-        console.log('Change CustomVar1');
-        console.log(value, old);
-    }
-
-    addUser() {
-        this.users.push({id: 7, name: 'Jessica'});
-    }
-
-    changeUser(index) {
-        //this.users[index] = {id: -1, name: 'Mary'};
-        this.users[index].name = 'Mary';
-        this.userIndex = 99;
-        //console.log(this);
-    }
-
-    removeUser(index) {
-        //console.log('----- click delete user');
-        console.log(index, this.users);
-        this.users.splice(index, 1);
-    }
-
-    replaceUser(index) {
-        this.users.splice(index, 2, {id: 8, name: 'Sam'});
-    }
-
-    clear() {
-        console.clear();
-    }
-
-    up() {
-        const table = document.getElementById('debug');
-        table.innerHTML = '<tr><td>Area</td><td>Component children</td><td>Inserted</td></tr>';
-        const tr = document.createElement('tr');
-        const td1 = document.createElement('td');
-        const td2 = document.createElement('td');
-        const td3 = document.createElement('td');
-        const varName = 'users';
-        for (let i in globals.content) {
-            const item = globals.content[i];
-            if (!i.startsWith('#construction:1:')) continue;
-            let cell = document.createElement('span');
-            cell.innerHTML = `<b>${i}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
-            //cell.innerHTML = `<b>${i}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
-            td1.appendChild(cell);
-        }
-        for (let i in test.content.children) {
-            const item = test.content.children[i];
-            if (!i.startsWith('#construction:1:')) continue;
-            let cell = document.createElement('span');
-            cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
-            //cell.innerHTML = `<b>${item.name}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
-            td2.appendChild(cell);
-        }
-        let i = 0;
-        test.content.vdom.items.forEach(vnode => {
-            if (i > 0) return;
-            i++;
-            vnode.data.inserted.forEach(item => {
-                if (!item.name.startsWith('#construction:1:')) return;
-                let cell = document.createElement('span');
-                cell.innerHTML = `<b>${item.name}</b></br> index: ${item.vars.key}; id: ${item.vars.item}; <br>`;
-                //cell.innerHTML = `<b>${item.name}</b></br> id: ${item.vars.country.id}; name: ${item.vars.country.ru} <br>`;
-                td3.appendChild(cell);
-            });
-        })
-        tr.appendChild(td1);
-        tr.appendChild(td2);
-        tr.appendChild(td3);
-        table.appendChild(tr);
-        console.table(globals.content.vars.numbers);
+        this.counter += 10;
     }
 }
 

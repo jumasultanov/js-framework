@@ -1,4 +1,5 @@
 import Directive from "../Directive.js";
+import Component from "../Component.js";
 import { Executor } from "../Service.js";
 
 class If {
@@ -15,7 +16,8 @@ class If {
         //Добавляем слушателей на события
         Directive
             .include('onParse', this)
-            .include('onExecute', this);
+            .include('onExecute', this)
+            .include('onDestroy', this);
     }
 
     /**
@@ -56,6 +58,28 @@ class If {
      */
     static onExecute(vnode) {
         this.constr(vnode);
+    }
+
+    /**
+     * Событие при уничтожении конструкции
+     * @param {VNode} vnode 
+     * @param {boolean} next Имя следующего блока конструкции
+     */
+    static onDestroy(vnode, next = 'if') {
+        //Получаем данные
+        let data = vnode.data.constr[next];
+        if ('dependencies' in data) {
+            //Удаляем наблюдателей
+            for (const id of data.dependencies) {
+                vnode.component.dependency.remove(id);
+            }
+        }
+        //Удаляем компонент
+        if (data.component instanceof Component && !data.component.isDestroyed()) {
+            Component.die(data.component);
+        }
+        //Проходимся по следующим блокам
+        if (data.next) this.onDestroy(vnode, data.next);
     }
 
     /**
@@ -109,11 +133,9 @@ class If {
         //Значение изменяем
         if (enable) data.current = false;
         if ('dependencies' in data) {
-            for (const prop in data.dependencies) {
-                //После проверок перебираем и изменяем активность функции
-                for (const index of data.dependencies[prop]) {
-                    vnode.component.dependency.setActive(prop, index, enable);
-                }
+            //После проверок перебираем и изменяем активность функции
+            for (const id of data.dependencies) {
+                vnode.component.dependency.setActive(id, enable);
             }
         }
         //Проходимся по следующим блокам

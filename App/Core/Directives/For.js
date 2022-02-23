@@ -1,5 +1,6 @@
 import Directive from "../Directive.js";
 import Area from "../Area.js";
+import Component from "../Component.js";
 import { Executor, AreaProxy, AreaExpanding } from "../Service.js";
 
 class For {
@@ -27,7 +28,8 @@ class For {
             .include('onProxyGet', this)
             .include('onProxySet', this)
             .include('onProxyDeleteProperty', this)
-            .include('onExecute', this);
+            .include('onExecute', this)
+            .include('onDestroy', this);
     }
 
     /**
@@ -164,7 +166,7 @@ class For {
         root.vars.getHandler().call(root.key, {
             force: true,
             change, index
-        }, true);
+        });
     }
 
     /**
@@ -173,6 +175,20 @@ class For {
      */
     static onExecute(vnode) {
         this.constr(vnode);
+    }
+
+    /**
+     * Событие при уничтожении конструкции
+     * @param {VNode} vnode 
+     */
+    static onDestroy(vnode) {
+        let data = vnode.data.constr.for;
+        if (data.next) {
+            const forElse = vnode.data.constr[data.next];
+            if (!forElse.component.isDestroyed()) {
+                Component.die(forElse.component);
+            }
+        }
     }
 
     /**

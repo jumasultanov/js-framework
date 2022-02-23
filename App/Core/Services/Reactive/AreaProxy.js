@@ -10,8 +10,9 @@ class AreaProxy {
     static on(vars) {
         //Проксируем основной объект и возвращаем оба варианта
         const proxy = new Proxy(vars, LocalProxy);
-        //Добавляем скрытый метод добавления свойства
+        //Добавляем скрытый метод добавления свойства и получения оригинального объекта для свойства
         AreaExpanding.setCreate(vars);
+        AreaExpanding.setOrigin(vars);
         //Проксируем вложенные объекты
         this.onInternal(vars);
         return { proxy, vars };

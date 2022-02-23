@@ -21,11 +21,6 @@ class TestController2 extends Controller {
     text = 'asdsadsd';
     desc = 'TETETETE';
 
-    constructor() {
-        super();
-        console.log('START TestController 2');
-    }
-
     doubleClick() {
         console.log('Double click', this);
     }
