@@ -39,7 +39,7 @@ class Executor {
                     val = defined.value;
                 }
                 //Сохраняем текущую функцию
-                this.saveDependency(ctx);
+                this.saveDependency(data, ctx, disactivable);
             }
             //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
@@ -50,43 +50,31 @@ class Executor {
             }
         }
         //Первый запуск функции
-        this.callDep(data, disactivable);
-    }
-
-    /**
-     * Запуск функции для ее сохранения в зависимостях и выполнения конструкции
-     * @param {object} data Данные выражения
-     * @param {boolean} disactivable Отключаемая функция в Dependency
-     */
-    static callDep(data, disactivable) {
-        //Если зависимость может быть отключена, актуально для IF, SWITCH
-        if (disactivable) {
-            this.$dep = { 
-                func: this.$dep,
-                use: data
-            };
-            this.$dep.func(this.collectParams);
-        } else this.$dep(this.collectParams);
+        this.$dep(this.collectParams);
     }
 
     /**
      * Сохранение в функции в зависимостях
      */
-    static saveDependency(ctx) {
-        let inserted;
-        let dependency = this.$target.getHandler();
-        //Получаем объект зависимости и записываем в нее функцию
-        if (this.$dep instanceof Function) {
-            inserted = dependency.add(this.$prop, this.$dep);
-        } else if (this.$dep instanceof Object) {
-            inserted = dependency.add(this.$prop, this.$dep.func, this.$dep.use);
+    static saveDependency(data, ctx, disactivable) {
+        const dependency = this.$target.getHandler();
+        //Создаем наблюдателя
+        const watcher = { method: this.$dep };
+        let caller = null;
+        if (disactivable) {
+            watcher.enabled = true;
+            caller = data;
         }
-        //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
-        ctx.$component.addUsedDeps(dependency, inserted);
+        //Получаем объект зависимости и записываем в нее функцию
+        const inserted = dependency.add(this.$prop, watcher, caller);
         //После сохранения функции очищаем свойства, чтобы не мешало последующим сохранениям
         this.$dep = undefined;
         this.$prop = undefined;
         this.$target = undefined;
+        //Добавляем метод для связки с компонентом
+        watcher.getComponent = () => ctx.$component;
+        //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
+        ctx.$component.addUsedDeps(dependency, inserted);
     }
 
 }

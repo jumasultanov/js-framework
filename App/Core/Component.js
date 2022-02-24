@@ -134,7 +134,8 @@ class Component extends BaseComponent {
     saveWatcher(methodName, method) {
         this.watchers[methodName] = {
             context: this.vars,
-            method
+            method,
+            getComponent: () => this
         };
     }
 
@@ -390,8 +391,6 @@ class Component extends BaseComponent {
      *      т.к. тут одиночное удаление без прохода по дочерним компонентам
      */
     die() {
-        console.warn(this.path.join(' -> '));
-        console.log(this);
         //Вызываем событие перед уничтожением
         if (this.vars.hasOwnProperty('beforeDestroy')) this.vars.beforeDestroy();
         this.enabled = false;

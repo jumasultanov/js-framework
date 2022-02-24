@@ -1,5 +1,5 @@
 import Directive from "../Directive.js";
-import { Executor } from "../Service.js";
+import { Executor, Dependency } from "../Service.js";
 
 class Basic {
 
@@ -159,7 +159,9 @@ class Basic {
         // TODO: добавить режимы для событии, пример: @click.prevent="click"
         const data = vnode.data.on[name];
         vnode.node.getNode().addEventListener(name, data.handler = event => {
+            Dependency.startCall();
             Executor.call(data.expr, vnode.getVars(), true);
+            Dependency.endCall();
         });
     }
 

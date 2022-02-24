@@ -63,7 +63,6 @@ class TestController extends Controller {
 
     //Срабатывает после обновления данных компонента и внесения его в DOM
     updated() {
-        // TODO: 
         console.log('Updated', this);
     }
 

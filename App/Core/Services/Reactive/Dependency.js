@@ -11,6 +11,9 @@ class Dependency {
     component;
     //Список связанных ИД и свойств
     unions = {};
+    //Счетчик цикла обновления
+    static callCounter = 0;
+    static callComponent = new Set();
 
     constructor(component) {
         this.component = component;
@@ -19,9 +22,12 @@ class Dependency {
     /**
      * Добавляет функцию для свойства
      * @param {string} prop Свойство
-     * @param {function} func Функция
+     * @param {object} watcher Наблюдатель
      */
-    add(prop, func, caller = null) {
+    add(prop, watcher, caller = null) {
+        // TODO: Проверить насколько быстрее будет работать код, 
+        //          если объект для перебора в методе "call" хранить в коллекции Set c id наблюдателей,
+        //          а объекты с наблюдателями в другом объекте и доставать их оттуда по ИД
         if (!(prop in this.dependencies)) this.dependencies[prop] = {};
         //const insertIndex = this.dependencies[prop].length;
         if (caller) {
@@ -30,16 +36,16 @@ class Dependency {
             //Добавляем индекс в объект конструкции, откуда был вызван
             caller.dependencies.add(Dependency.counter);
             //Сохраняем отключаемую функцию
-            this.dependencies[prop][Dependency.counter] = { func, enabled: true };
+            this.dependencies[prop][Dependency.counter] = watcher;
         } else {
             // TODO: надо чтобы сюда не приходили существующие функции
             // TODO: удалить при ненадобности
             for (const i in this.dependencies[prop]) {
-                if (func !== this.dependencies[prop][i]) continue;
+                if (watcher !== this.dependencies[prop][i]) continue;
                 console.error('INCLUDES: '+prop, i);
             }
             //Сохраняем функцию
-            this.dependencies[prop][Dependency.counter] = func;
+            this.dependencies[prop][Dependency.counter] = watcher;
         }
         this.unions[Dependency.counter] = prop;
         return Dependency.counter++;
@@ -78,18 +84,50 @@ class Dependency {
         }
         //Выполняем все функции
         if (prop in this.dependencies) {
-            //console.warn('CALL: '+prop, this.component);
+            //console.warn('CALL: '+prop, this.component?.path?.join(' -> '));
             //console.log(params);
             //console.log(this.dependencies[prop]);
+            // TODO: Проверять кол-во выполнении, чтобы не попадать в бесконечный цикл
+            Dependency.startCall();
             for (const id in this.dependencies[prop]) {
-                const func = this.dependencies[prop][id];
-                if (func instanceof Function) func(...params);
-                else if (func.hasOwnProperty('enabled') && func.enabled) func.func(...params);
-                else if (func.hasOwnProperty('method')) {
-                    func.method.call(func.context, ...params);
+                const watcher = this.dependencies[prop][id];
+                //Получаем ответственный компонент
+                const comp = watcher.getComponent();
+                //Добавляем компонент для хука обновления
+                if (comp.origin.hasOwnProperty('updated')) {
+                    Dependency.callComponent.add(comp);
                 }
+                //Выполняем функцию
+                if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
+                if (watcher.context) watcher.method.call(watcher.context, ...params);
+                else watcher.method(...params);
             }
+            Dependency.endCall();
         }
+    }
+
+    /**
+     * Увеличиваем счетчик перед выполнением наблюдателя
+     */
+    static startCall() {
+        this.callCounter++;
+    }
+    
+    /**
+     * Убавляем счетчик после выполнения наблюдателя
+     */
+    static endCall() {
+        this.callCounter--;
+        //Если все выполнилось то обнуляем список ответственных компонентов
+        if (!this.callCounter) this.clearCall();
+    }
+
+    /**
+     * Хук обновления и очистка списка
+     */
+    static clearCall() {
+        for (const comp of this.callComponent) comp.vars.updated();
+        this.callComponent.clear();
     }
 
     /**
