@@ -27,6 +27,7 @@ class TestController extends Controller {
     customVar1 = true;
     customVar2 = 10;
     customVar3 = 888;
+    checked = true;
     big = {
         items: ['a', 'b', 'c'],
         _items: [
@@ -45,7 +46,7 @@ class TestController extends Controller {
             console.log(this);
         }
     }
-
+/*
     //Срабатывает перед слиянием с компонентом beforeCreateComponent
     //  Контекст {this} - текущий объект контроллера
     constructor() {
@@ -97,11 +98,18 @@ class TestController extends Controller {
         console.log('Change counter');
         console.log(value, old);
         console.log(this);
+    }*/
+
+    watchChecked(value, old) {
+        console.log('Change checked');
+        console.log(value, old);
+        console.log(this);
     }
 
     click(ev) {
-        this.customVar3 -= 8;
-        this.counter += 10;
+        /*this.customVar3 -= 8;
+        this.counter += 10;*/
+        this.checked = !this.checked;
     }
 }
 

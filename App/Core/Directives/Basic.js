@@ -35,8 +35,9 @@ class Basic {
         } else if (attr == 'class') {
             // TODO: parse class json for object
             data.class = value;
-        } else if (attr in node) data.props[attr] = value;
-        else data.attrs[attr] = { expr: value };
+        } else if (attr in node) {
+            data.props[attr] = { expr: value };
+        } else data.attrs[attr] = { expr: value };
     }
 
     /**
@@ -212,10 +213,12 @@ class Basic {
      * Установка свойств
      */
     static setProperties(vnode) {
-        /*for (const name in this.data.props) {
-            const data = this.data.props[name];
-            Executor.exec('prop', this.node, name, data, this.getVars());
-        }*/
+        for (const name in vnode.data.props) {
+            const data = vnode.data.props[name];
+            Executor.expr(data.expr, data, vnode.getVars(), false, () => {
+                vnode.node.prop(name, data.current);
+            });
+        }
     }
 
 }

@@ -30,6 +30,10 @@ class NodeElement {
         this.node.setAttribute(key, value);
     }
 
+    prop(key, value) {
+        this.node[key] = value;
+    }
+
 }
 
 export default NodeElement

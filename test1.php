@@ -24,6 +24,22 @@
                 <div class="col-5">
                     <button id="test-btn" @click="click">Custom event {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
                     <span m-for="nums">{{ item }}, </span>
+                    <br>
+                    <form class="mt-5">
+                        <div class="form-group mb-3">
+                            <label for="exampleInputEmail1">Email address</label>
+                            <input type="email" class="form-control" placeholder="Enter email">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="exampleInputPassword1">Password</label>
+                            <input type="password" class="form-control" placeholder="Password">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="exampleCheck1" :checked="checked">
+                            <label class="form-check-label" for="exampleCheck1">Check me out</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
                 </div>
                 <div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">
