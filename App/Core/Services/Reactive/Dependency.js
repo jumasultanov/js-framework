@@ -78,7 +78,7 @@ class Dependency {
      * @param {string} prop Свойство
      */
     call(prop, ...params) {
-        if (this.component instanceof Component) {
+        if (typeof this.component != 'boolean') {
             //Если компонент отключен, то ничего не выполняем
             if (!this.component.isActive()) return;
         }
@@ -88,15 +88,12 @@ class Dependency {
             //console.log(params);
             //console.log(this.dependencies[prop]);
             // TODO: Проверять кол-во выполнении, чтобы не попадать в бесконечный цикл
+            //  
             Dependency.startCall();
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
-                //Получаем ответственный компонент
-                const comp = watcher.getComponent();
-                //Добавляем компонент для хука обновления
-                if (comp.origin.hasOwnProperty('updated')) {
-                    Dependency.callComponent.add(comp);
-                }
+                //Сохраняем ответственный компонент для хука обновления
+                Dependency.saveCaller(watcher.getComponent());
                 //Выполняем функцию
                 if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
                 if (watcher.context) watcher.method.call(watcher.context, ...params);
@@ -112,6 +109,22 @@ class Dependency {
     static startCall() {
         this.callCounter++;
     }
+
+    /**
+     * Сохранение компонента для хуков обновления
+     * @param {Component} comp 
+     */
+    static saveCaller(comp) {
+        const hookUp = comp.origin.hasOwnProperty('updated');
+        const hookBup = comp.origin.hasOwnProperty('beforeUpdate');
+        const size = this.callComponent.size;
+        if (hookUp || hookBup) {
+            this.callComponent.add(comp);
+        }
+        if (hookBup && this.callComponent.size > size) {
+            comp.vars.beforeUpdate();
+        }
+    }
     
     /**
      * Убавляем счетчик после выполнения наблюдателя
@@ -126,7 +139,11 @@ class Dependency {
      * Хук обновления и очистка списка
      */
     static clearCall() {
-        for (const comp of this.callComponent) comp.vars.updated();
+        for (const comp of this.callComponent) {
+            if (comp.origin.hasOwnProperty('updated')) {
+                comp.vars.updated();
+            }
+        }
         this.callComponent.clear();
     }
 
@@ -138,7 +155,7 @@ class Dependency {
     static define(vars, component = true) {
         const dependency = new this(component);
         //Если компонент, то связываем
-        if (component instanceof Component) component.setDependency(dependency);
+        if (typeof component != 'boolean') component.setDependency(dependency);
         AreaExpanding.setHandler(vars, dependency);
     }
 

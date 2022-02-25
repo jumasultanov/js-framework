@@ -3,19 +3,22 @@ import Controller from '../Core/Controller.js';
 /**
  * Контроллер для блоков
  * 
- *      Event life cycle
+ *      Properties (данные контроллера, которые будут совмещены с данными компонента, как и любые методы)
+ * 
+ *      Hooks life cycle (не обязательно использовать данные методы)
  *          constructor
  *          created
  *          mounted
+ *          beforeUpdate
  *          updated
  *          beforeDestroy
  *          destroyed
  * 
- *      Custom methods
- *          ---
+ *      Custom methods (любые пользовательские методы)
  * 
- *      Watchers
- *          watchCustomVar1
+ *      Watchers (наблюдатели, срабатывают, когда изменилось свойство, в аргументах принимают новое значение и старое значение)
+ *          watchCustomVar1 (название метода заполняется по шаблону: "watch<Название свойства>" )
+ *              * TODO: пока нельзя следить за свойствами вложенных объектов
  * 
  */
 
@@ -38,6 +41,7 @@ class TestController extends Controller {
         },
         current: 1,
         callback() {
+            //Тут контекст это "big", т.е. к контроллеру не попасть
             console.log(this);
         }
     }
@@ -59,6 +63,11 @@ class TestController extends Controller {
     mounted() {
         console.log('Mounted', this);
         //this.customVar3 = 1000;
+    }
+
+    //Срабатывает перед обновлением данных компонента и перед внесением его в DOM
+    beforeUpdate() {
+        console.log('Before update', this);
     }
 
     //Срабатывает после обновления данных компонента и внесения его в DOM

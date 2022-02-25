@@ -351,9 +351,7 @@ class Component extends BaseComponent {
         //Определяем область данных
         this.defineArea();
         //Выполняем родительский метод завершения загрузок
-        if (Component.completeLoadControllers instanceof Function) {
-            Component.completeLoadControllers();
-        }
+        Component.completeLoadControllers();
     }
 
     /**
@@ -370,7 +368,9 @@ class Component extends BaseComponent {
     enable() {
         if (this.enabled) return;
         this.enabled = true;
+        //Тут может быть хук enabled, если компонент уже был смонтирован
         if (!this.vdom.isActive()) {
+            //Тут может быть хук beforeMount
             this.insertWatchers();
             this.vdom.enableReactive();
             if (this.vars.hasOwnProperty('mounted')) this.vars.mounted();
@@ -383,6 +383,7 @@ class Component extends BaseComponent {
     disable() {
         if (!this.enabled) return;
         this.enabled = false;
+        //Тут может быть хук disabled
     }
 
     /**

@@ -2,7 +2,7 @@ class Controller {
 
     //Игнорируемые методы
     static mergeIgnored = new Set(['constructor']);
-    //
+    //Префикс для методов-наблюдателей за свойствами
     static watcherPrefix = 'watch';
 
     constructor() {
