@@ -53,6 +53,31 @@ class AreaExpanding {
     }
 
     /**
+     * Добавление скрытого метода, который будет вызывать наблюдателей для конкретного свойства
+     * @param {object} vars 
+     */
+    static setUpdate(vars) {
+        Object.defineProperty(vars, '$update', Helper.getDescriptor((prop, params) => {
+            vars.getHandler().call(prop, Object.assign({ force: true }, params));
+        }, false, false, false));
+    }
+
+    /**
+     * Добавление скрытого метода, который будет возвращать объект с компонентом и путь, где лежит свойство
+     * @param {object} vars 
+     * @param {string} key 
+     */
+    static setComponent(vars, key) {
+        Object.defineProperty(vars[key].__proto__, 'getComponent', 
+            Helper.getDescriptor((path = []) => {
+                path.push(key);
+                if (vars.getComponent) return vars.getComponent(path);
+                return { component: vars.$component, path };
+            }, false, false, false)
+        );
+    }
+
+    /**
      * Возвращает общий родительский объект с параметрами по умолчанию
      * @param {object} obj Объекта, для которого будет формироваться
      * @returns {object}

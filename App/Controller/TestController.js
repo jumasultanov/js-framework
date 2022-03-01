@@ -28,6 +28,11 @@ class TestController extends Controller {
     customVar2 = 10;
     customVar3 = 888;
     checked = true;
+    classes = {
+        abc: true,
+        xyz: 1,
+        ttt: 0
+    };
     big = {
         items: ['a', 'b', 'c'],
         _items: [
@@ -51,31 +56,31 @@ class TestController extends Controller {
     //  Контекст {this} - текущий объект контроллера
     constructor() {
         super();
-        console.log('START TestController', this);
+        console.log('START TestController');
     }
 
     //Срабатывает после связки с компонентом
     //  Контекст {this} - объект данных с текущими свойствами и методами и с компонентом
     created() {
-        console.log('Created', this);
+        console.log('Created');
     }
 
     //Срабатывает после включения компонента
     mounted() {
-        console.log('Mounted', this);
+        console.log('Mounted');
         //this.customVar3 = 1000;
     }
-
+*/
     //Срабатывает перед обновлением данных компонента и перед внесением его в DOM
     beforeUpdate() {
-        console.log('Before update', this);
+        console.log('Before update');
     }
 
     //Срабатывает после обновления данных компонента и внесения его в DOM
     updated() {
-        console.log('Updated', this);
+        console.log('Updated');
     }
-
+/*
     //Срабатывает перед уничтожением компонента
     beforeDestroy() {
         console.log('Before destroy');
@@ -99,17 +104,22 @@ class TestController extends Controller {
         console.log(value, old);
         console.log(this);
     }*/
-
+/*
     watchChecked(value, old) {
         console.log('Change checked');
         console.log(value, old);
         console.log(this);
-    }
+    }*/
 
     click(ev) {
-        /*this.customVar3 -= 8;
-        this.counter += 10;*/
-        this.checked = !this.checked;
+        //this.customVar3 -= 8;
+        //this.counter += 10;
+        //this.checked = !this.checked;
+        
+        this.classes.abc = !this.classes.abc;
+        this.classes.ttt = !this.classes.ttt;
+        this.classes.WWW = !this.classes.WWW;
+        delete this.classes.xyz;
     }
 }
 

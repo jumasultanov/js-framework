@@ -34,6 +34,14 @@ class NodeElement {
         this.node[key] = value;
     }
 
+    addClass(key) {
+        this.node.classList.add(key);
+    }
+
+    removeClass(key) {
+        this.node.classList.remove(key);
+    }
+
 }
 
 export default NodeElement

@@ -1,5 +1,5 @@
 import Directive from '../../Directive.js';
-import { Executor } from '../../Service.js';
+import { Executor, AreaProxy } from '../../Service.js';
 
 class LocalProxy {
 
@@ -48,13 +48,19 @@ class LocalProxy {
             const oldValue = target[prop];
             const result = Reflect.set(target, prop, val, receiver);
             //Выполняем все функции зависимости (слушатели прокси)
-            if (result) target.getHandler().call(prop, target[prop], oldValue);
+            if (result) {
+                //Проксируем
+                AreaProxy.one(target, prop);
+                target.getHandler().call(prop, target[prop], oldValue);
+            }
             return result;
         } else { //Иначе изменяем в родительском объекте, пока не дойдем до свойства
             if (prop in target) {
                 target.__proto__[prop] = val;
             } else {
                 target.$create(prop, val);
+                //Вызываем наблюдателя за добавлением элементов
+                target.$update('$create', { prop });
             }
         }
         return true;
@@ -70,7 +76,12 @@ class LocalProxy {
     static deleteProperty(target, prop, receiver) {
         //Выполняем частные методы директив
         let result = Directive.on('onProxyDeleteProperty', target, prop, receiver);
-        if (result === undefined) result = Reflect.deleteProperty(target, prop, receiver);
+        if (result === undefined) {
+            const removedVal = target[prop];
+            result = Reflect.deleteProperty(target, prop, receiver);
+            //Вызываем наблюдателя за удалением элементов
+            target.$update('$delete', { prop, val: removedVal });
+        }
         return result;
     }
 

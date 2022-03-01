@@ -29,7 +29,6 @@ class Dependency {
         //          если объект для перебора в методе "call" хранить в коллекции Set c id наблюдателей,
         //          а объекты с наблюдателями в другом объекте и доставать их оттуда по ИД
         if (!(prop in this.dependencies)) this.dependencies[prop] = {};
-        //const insertIndex = this.dependencies[prop].length;
         if (caller) {
             //Добавляем пустые объекты, если они отсутсвуют
             if (!('dependencies' in caller)) caller.dependencies = new Set();
@@ -52,6 +51,17 @@ class Dependency {
     }
 
     /**
+     * Добавление наблюдателей для объекта или массива, чтобы следить за их изменением
+     * @param {object} vars 
+     * @param  {...function} callbacks 
+     */
+    addObjectWatchers(vars, ...callbacks) {
+        const getComponent = () => vars.getComponent().component;
+        this.add('$create', { method: callbacks[0], getComponent });
+        this.add('$delete', { method: callbacks[1], getComponent });
+    }
+
+    /**
      * Удаление наблюдателя
      * @param {Number} id ИД наблюдателя
      */
@@ -60,6 +70,18 @@ class Dependency {
         if (!prop) return;
         delete this.dependencies[prop][id];
         delete this.unions[id];
+    }
+
+    /**
+     * Удаление наблюдателей по свойству
+     * @param {string} prop 
+     * @returns 
+     */
+    removeProp(prop) {
+        if (!(prop in this.dependencies)) return;
+        const ids = Object.keys(this.dependencies[prop]);
+        for (const id of ids) delete this.unions[id];
+        delete this.dependencies[prop];
     }
 
     /**
@@ -93,7 +115,7 @@ class Dependency {
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
                 //Сохраняем ответственный компонент для хука обновления
-                Dependency.saveCaller(watcher.getComponent());
+                if (watcher.getComponent) Dependency.saveCaller(watcher.getComponent());
                 //Выполняем функцию
                 if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
                 if (watcher.context) watcher.method.call(watcher.context, ...params);
@@ -115,6 +137,7 @@ class Dependency {
      * @param {Component} comp 
      */
     static saveCaller(comp) {
+        // TODO: Хук beforeUpdated - срабатывать должен не здесь, а перед изменением в proxy -> set
         const hookUp = comp.origin.hasOwnProperty('updated');
         const hookBup = comp.origin.hasOwnProperty('beforeUpdate');
         const size = this.callComponent.size;

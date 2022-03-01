@@ -198,6 +198,8 @@ class For {
         let data = vnode.data.constr.for;
         //Выполнение выражения для цикла
         Executor.expr(data.expr, data, vnode.getVars(), false, params => {
+            // TODO: Переделать, т.к. добавление и удаление из  массива
+            //          будет происходить через addObjectWatchers
             let forElse;
             //Обощаем данные для конкретного изменения
             this.vnode = vnode;
@@ -220,6 +222,7 @@ class For {
                     if (parent) AreaExpanding.setWatcher(parent.vars, data.expr);
                     //Обновляем весь список
                     if (count) {
+                        // TODO: сделать вставку в DOM через documentFragment, чтобы при каждой итерации не заносился в DOM
                         for (const key in data.current) {
                             this.componentInsert(key, this.vnode.data.space);
                         }

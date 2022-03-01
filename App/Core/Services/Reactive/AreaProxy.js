@@ -12,6 +12,7 @@ class AreaProxy {
         const proxy = new Proxy(vars, LocalProxy);
         //Добавляем скрытый метод добавления свойства и получения оригинального объекта для свойства
         AreaExpanding.setCreate(vars);
+        AreaExpanding.setUpdate(vars);
         AreaExpanding.setOrigin(vars);
         //Проксируем вложенные объекты
         this.onInternal(vars);
@@ -43,6 +44,9 @@ class AreaProxy {
             item.__proto__ = AreaExpanding.getRoot(item);
             Dependency.define(item, false);
             vars[key] = new Proxy(item, LocalProxy);
+            AreaExpanding.setCreate(item);
+            AreaExpanding.setUpdate(item);
+            AreaExpanding.setComponent(vars, key);
         }
     }
 

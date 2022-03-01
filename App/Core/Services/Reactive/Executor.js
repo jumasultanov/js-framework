@@ -31,6 +31,7 @@ class Executor {
             if (params && params.collect) {
                 //Если выражение содержит голые данные
                 if (!this.$target) {
+                    console.error('NUDES DATA', val);
                     //Создаем для них свое свойство в данных компонента
                     const defined = Area.define(data.component.path.slice(0, -1), false, val);
                     //Дополняем текущие данные
@@ -71,10 +72,12 @@ class Executor {
         this.$dep = undefined;
         this.$prop = undefined;
         this.$target = undefined;
-        //Добавляем метод для связки с компонентом
-        watcher.getComponent = () => ctx.$component;
-        //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
-        ctx.$component.addUsedDeps(dependency, inserted);
+        if (ctx.$component) {
+            //Добавляем метод для связки с компонентом
+            watcher.getComponent = () => ctx.$component;
+            //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
+            ctx.$component.addUsedDeps(dependency, inserted);
+        }
     }
 
 }

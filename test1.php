@@ -38,7 +38,12 @@
                             <input type="checkbox" class="form-check-input" id="exampleCheck1" :checked="checked">
                             <label class="form-check-label" for="exampleCheck1">Check me out</label>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button 
+                            type="submit" 
+                            class="btn btn-primary"
+                            :class="classes"
+                            class1="{ test: checked, test1: true, test2: 1, test3: 'tt', test4: 0}"
+                        >Submit</button>
                     </form>
                 </div>
                 <div class="col-2" m-block="author">

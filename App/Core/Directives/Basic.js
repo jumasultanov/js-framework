@@ -1,5 +1,5 @@
 import Directive from "../Directive.js";
-import { Executor, Dependency } from "../Service.js";
+import { Executor, Dependency, AreaProxy, Transform } from "../Service.js";
 
 class Basic {
 
@@ -32,12 +32,9 @@ class Basic {
         if (attr == 'style') {
             // TODO: parse style json for object
             data.style = value;
-        } else if (attr == 'class') {
-            // TODO: parse class json for object
-            data.class = value;
-        } else if (attr in node) {
-            data.props[attr] = { expr: value };
-        } else data.attrs[attr] = { expr: value };
+        } else if (attr == 'class') data.class = { expr: value };
+        else if (attr in node) data.props[attr] = { expr: value };
+        else data.attrs[attr] = { expr: value };
     }
 
     /**
@@ -75,7 +72,7 @@ class Basic {
             //Add expression
             const text = new Text(match.input.substring(match.index, end));
             const value = text.textContent.substring(2, match[0].length - 2);
-            const data = { expr: value, transform: this.transformText };
+            const data = { expr: value, transform: Transform.text };
             items.push({ text, data });
             split.push(text);
         }
@@ -87,21 +84,6 @@ class Basic {
         node.parentNode.removeChild(node);
         const lastElement = split[split.length - 1];
         return { items, lastElement };
-    }
-    
-    /**
-     * Преобразование значении в текст
-     * @param {any} value Значение
-     * @returns {string}
-     */
-    static transformText(value) {
-        if (typeof value != 'string') {
-            if (value) {
-                if (value instanceof Object) value = JSON.stringify(value);
-                else value = String(value);
-            } else value = '';
-        }
-        return value;
     }
 
     /**
@@ -179,6 +161,7 @@ class Basic {
 
     /**
      * Установка атрибутов
+     * @param {VNode} vnode 
      */
     static setAttributes(vnode) {
         for (const name in vnode.data.attrs) {
@@ -190,27 +173,8 @@ class Basic {
     }
 
     /**
-     * Установка стилей
-     */
-    static setStyles(vnode) {
-        /*for (const name in this.data.style) {
-            const data = this.data.style[name];
-            Executor.exec('bind', this.node, name, data, this.getVars());
-        }*/
-    }
-
-    /**
-     * Установка классов
-     */
-    static setClasses(vnode) {
-        /*for (const name in this.data.class) {
-            const data = this.data.class[name];
-            Executor.exec('bind', this.node, name, data, this.getVars());
-        }*/
-    }
-
-    /**
      * Установка свойств
+     * @param {VNode} vnode 
      */
     static setProperties(vnode) {
         for (const name in vnode.data.props) {
@@ -219,6 +183,92 @@ class Basic {
                 vnode.node.prop(name, data.current);
             });
         }
+    }
+
+    /**
+     * Установка классов
+     * @param {VNode} vnode 
+     */
+    static setClasses(vnode) {
+        if (vnode.data.class) {
+            const data = vnode.data.class;
+            Executor.expr(data.expr, data, vnode.getVars(), false, () => {
+                //Контроль вставленных классов
+                if (data.classInserted) this.clearClasses(vnode);
+                else data.classInserted = new Set();
+                if (data.current instanceof Object) {
+                    this.setClassesFromObject(vnode, data, data.current);
+                }
+            });
+        }
+    }
+
+    /**
+     * Установка классов по объекту
+     * @param {VNode} vnode 
+     * @param {object} data 
+     * @param {object} items 
+     */
+    static setClassesFromObject(vnode, data, items) {
+        //Устанавливаем наблюдателей при добавлении и удалении в объекте
+        items.getHandler().addObjectWatchers(items, changeParams => {
+            //Добавляем наблюдателя за классом
+            this.setClass(vnode, data, items, changeParams.prop);
+        }, changeParams => {
+            //Удаляем класс и наблюдателя
+            vnode.node.removeClass(changeParams.prop);
+            data.classInserted.delete(changeParams.prop);
+            items.getHandler().removeProp(changeParams.prop);
+        });
+        //Вставляем классы
+        for (const name in items) this.setClass(vnode, data, items, name);
+    }
+
+    /**
+     * Установка класса на элемент
+     * @param {VNode} vnode 
+     * @param {object} data 
+     * @param {string} name Название класса
+     * @param {boolean} started 
+     */
+    static setClass(vnode, data, current, name, started = false) {
+        //Формируем объект для класса элемента
+        const internalData = { expr: name };
+        internalData.__proto__ = data;
+        Executor.expr(internalData.expr, internalData, current, false, () => {
+            //Добавляем компонент, для хука обновления
+            if (started) Dependency.saveCaller(vnode.component);
+            //Добавляем или удаляем класс в зависимости от значения
+            if (internalData.current) {
+                vnode.node.addClass(name);
+                data.classInserted.add(name);
+            } else {
+                vnode.node.removeClass(name);
+                data.classInserted.delete(name);
+            }
+        });
+        started = true;
+    }
+
+    /**
+     * Очистка классов из элемента
+     * @param {VNode} vnode 
+     */
+    static clearClasses(vnode) {
+        const data = vnode.data.class;
+        for (const name of data.classInserted) vnode.node.removeClass(name);
+        data.classInserted.clear();
+    }
+
+    /**
+     * Установка стилей
+     * @param {VNode} vnode 
+     */
+    static setStyles(vnode) {
+        /*for (const name in this.data.style) {
+            const data = this.data.style[name];
+            Executor.exec('bind', this.node, name, data, this.getVars());
+        }*/
     }
 
 }

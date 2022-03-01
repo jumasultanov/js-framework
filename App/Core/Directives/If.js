@@ -1,6 +1,6 @@
 import Directive from "../Directive.js";
 import Component from "../Component.js";
-import { Executor } from "../Service.js";
+import { Executor, Transform } from "../Service.js";
 
 class If {
 
@@ -37,19 +37,10 @@ class If {
     static onParse(expr, node, data, parser) {
         let list = {};
         //Указываем трансформацию значении
-        data.transform = this.transform;
+        data.transform = Transform.bool;
         //Собираем и сохраняем последующие блоки конструкции
         const next = parser.unionNodes(node.nextElementSibling, this.nextConstructions, list);
         return { expr, list, next, readyComponent: true }
-    }
-
-    /**
-     * Преобразование значения выражения
-     * @param {any} value Значение
-     * @returns {boolean}
-     */
-    static transform(value) {
-        return !!value;
     }
 
     /**
