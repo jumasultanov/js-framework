@@ -15,7 +15,7 @@ class Log {
 
     /**
      * @param {any|any[]} message Сообщение
-     * @param {number} type Тип
+     * @param {number|number[]} type Тип
      * @param {string} group Группа/категория
      * @param {number} driver Место вывода
      */
@@ -43,18 +43,31 @@ class Log {
     displayConsole() {
         let data = this.message;
         if (!(data instanceof Array)) data = [data];
-        let method;
-        switch (this.type) {
-            case Log.TYPE_SIMPLE: method = 'log'; break;
-            case Log.TYPE_WARN: method = 'warn'; break;
-            case Log.TYPE_ERROR: method = 'error'; break;
-            case Log.TYPE_INFO: method = 'info'; break;
-            default: method = 'log';
-        }
         if (this.group) console.group(this.group);
-        data.forEach(message => console[method](message));
+        const isArrType = Array.isArray(this.type);
+        data.forEach((message, index) => {
+            let method = Log.getConsoleMethod(
+                isArrType ? this.type[index] : this.type
+            );
+            console[method](message);
+        });
         if (this.group) console.groupEnd();
         return true;
+    }
+
+    /**
+     * Возвращает метод объекта console по константе Log.TYPE_*
+     * @param {number} type 
+     * @returns {string}
+     */
+    static getConsoleMethod(type) {
+        switch (type) {
+            case Log.TYPE_SIMPLE:   return 'log';
+            case Log.TYPE_WARN:     return 'warn';
+            case Log.TYPE_ERROR:    return 'error';
+            case Log.TYPE_INFO:     return 'info';
+            default:                return 'log';
+        }
     }
 
     /**
