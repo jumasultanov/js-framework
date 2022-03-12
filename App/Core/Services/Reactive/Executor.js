@@ -1,8 +1,8 @@
 import Area from "../../Area.js";
+import { Log } from '../../Service.js';
 
 class Executor {
 
-    static $dep;
     static collectParams = { collect: true };
 
     /**
@@ -13,7 +13,15 @@ class Executor {
      * @returns {any}
      */
     static call(expr, ctx, isVoid = false) {
-        return new Function(`with(this){${isVoid?'':'return '}${expr}}`).bind(ctx)();
+        try {
+            return new Function(`with(this){${isVoid?'':'return '}${expr}}`).bind(ctx)();
+        } catch (err) {
+            Log.send(
+                [err.message, `Expression: '${expr}'`, ctx],
+                [Log.TYPE_ERROR],
+                'Call expression'
+            );
+        }
     }
 
     /**
@@ -30,7 +38,7 @@ class Executor {
             //Если первый раз, то собираем зависимости
             if (params && params.collect) {
                 //Если выражение содержит голые данные
-                if (!this.$target) {
+                if (!this.$target && data.component) {
                     console.error('NUDES DATA', val);
                     //Создаем для них свое свойство в данных компонента
                     const defined = Area.define(data.component.path.slice(0, -1), false, val);
@@ -58,6 +66,7 @@ class Executor {
      * Сохранение в функции в зависимостях
      */
     static saveDependency(data, ctx, disactivable) {
+        if (!this.$target) return;
         const dependency = this.$target.getHandler();
         //Создаем наблюдателя
         const watcher = { method: this.$dep };
@@ -72,6 +81,7 @@ class Executor {
         this.$dep = undefined;
         this.$prop = undefined;
         this.$target = undefined;
+        this.$inners = undefined;
         if (ctx.$component) {
             //Добавляем метод для связки с компонентом
             watcher.getComponent = () => ctx.$component;

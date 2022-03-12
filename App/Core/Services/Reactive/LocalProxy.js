@@ -11,16 +11,18 @@ class LocalProxy {
      * @returns {any}
      */
     static get(target, prop, receiver) {
-        if (typeof prop !== 'symbol' && Executor.$dep && prop !== 'hasOwnProperty') {
-            if (target.hasOwnProperty(prop) || Executor.$inners) {
-                Executor.$target = target;
-                Executor.$prop = prop;
-                Executor.$inners = true;
+        if (typeof prop !== 'symbol' && prop !== 'hasOwnProperty') {
+            if (Executor.$dep) {
+                if (target.hasOwnProperty(prop) || Executor.$inners) {
+                    Executor.$target = target;
+                    Executor.$prop = prop;
+                    Executor.$inners = true;
+                }
+            } else {
+                //Выполняем частные методы директив
+                const result = Directive.on('onProxyGet', target, prop, receiver);
+                if (result !== undefined) return result;
             }
-        } else {
-            //Выполняем частные методы директив
-            const result = Directive.on('onProxyGet', target, prop, receiver);
-            if (result !== undefined) return result;
         }
         return Reflect.get(target, prop, receiver);
     }
