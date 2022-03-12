@@ -1,5 +1,6 @@
 //Helper
 export { default as Helper } from './Services/Helpers/Helper.js';
+export { default as StrParser } from './Services/Helpers/Parser.js';
 export { default as Transform } from './Services/Helpers/Transform.js';
 //DOM
 export { default as DOM } from './Services/DOM/DOM.js'
