@@ -1,5 +1,5 @@
 import Directive from "../Directive.js";
-import { Executor, Dependency, AreaProxy, Transform } from "../Service.js";
+import { Executor, Dependency, StrParser, Transform } from "../Service.js";
 
 class Basic {
 
@@ -192,14 +192,21 @@ class Basic {
     static setClasses(vnode) {
         if (vnode.data.class) {
             const data = vnode.data.class;
-            Executor.expr(data.expr, data, vnode.getVars(), false, () => {
-                //Контроль вставленных классов
-                if (data.classInserted) this.clearClasses(vnode);
-                else data.classInserted = new Set();
-                if (data.current instanceof Object) {
-                    this.setClassesFromObject(vnode, data, data.current);
-                }
-            });
+            data.classInserted = new Set();
+            let expr = data.expr.trim();
+            if (expr.startsWith('{')) {
+                StrParser.match(expr, (key, valueExpr) => {
+                    this.setClass(vnode, data, vnode.getVars(), valueExpr, key);
+                });
+            } else {
+                Executor.expr(data.expr, data, vnode.getVars(), false, () => {
+                    //Контроль вставленных классов
+                    if (data.classInserted) this.clearClasses(vnode);
+                    if (data.current instanceof Object) {
+                        this.setClassesFromObject(vnode, data, data.current);
+                    }
+                });
+            }
         }
     }
 
@@ -213,7 +220,7 @@ class Basic {
         //Устанавливаем наблюдателей при добавлении и удалении в объекте
         items.getHandler().addObjectWatchers(items, changeParams => {
             //Добавляем наблюдателя за классом
-            this.setClass(vnode, data, items, changeParams.prop);
+            this.setClass(vnode, data, items, changeParams.prop, changeParams.prop);
         }, changeParams => {
             //Удаляем класс и наблюдателя
             vnode.node.removeClass(changeParams.prop);
@@ -221,7 +228,7 @@ class Basic {
             items.getHandler().removeProp(changeParams.prop);
         });
         //Вставляем классы
-        for (const name in items) this.setClass(vnode, data, items, name);
+        for (const name in items) this.setClass(vnode, data, items, name, name);
     }
 
     /**
@@ -231,20 +238,20 @@ class Basic {
      * @param {string} name Название класса
      * @param {boolean} started 
      */
-    static setClass(vnode, data, current, name, started = false) {
+    static setClass(vnode, data, current, expr, className, started = false) {
         //Формируем объект для класса элемента
-        const internalData = { expr: name };
+        const internalData = { expr };
         internalData.__proto__ = data;
         Executor.expr(internalData.expr, internalData, current, false, () => {
             //Добавляем компонент, для хука обновления
             if (started) Dependency.saveCaller(vnode.component);
             //Добавляем или удаляем класс в зависимости от значения
             if (internalData.current) {
-                vnode.node.addClass(name);
-                data.classInserted.add(name);
+                vnode.node.addClass(className);
+                data.classInserted.add(className);
             } else {
-                vnode.node.removeClass(name);
-                data.classInserted.delete(name);
+                vnode.node.removeClass(className);
+                data.classInserted.delete(className);
             }
         });
         started = true;
