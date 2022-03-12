@@ -31,8 +31,15 @@ class TestController extends Controller {
     classes = {
         abc: true,
         xyz: 1,
-        ttt: 0
-    };
+        't-t-t': 0
+    }
+    styles = {
+        display: 'block',
+        color: 'green',
+        opacity: 0.2,
+        'font-size': '18px',
+        'font-weight': 'bold'
+    }
     big = {
         items: ['a', 'b', 'c'],
         _items: [
@@ -118,9 +125,12 @@ class TestController extends Controller {
         this.checked = !this.checked;
         
         this.classes.abc = !this.classes.abc;
-        this.classes.ttt = !this.classes.ttt;
+        this.classes['t-t-t'] = !this.classes['t-t-t'];
         this.classes.WWW = !this.classes.WWW;
         delete this.classes.xyz;
+        this.styles.opacity += 0.1;
+        this.styles['font-size'] = (parseFloat(this.styles['font-size'])+1) + 'px';
+        delete this.styles['font-weight'];
     }
 }
 

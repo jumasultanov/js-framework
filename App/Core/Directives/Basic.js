@@ -30,10 +30,12 @@ class Basic {
      */
     static onParse(node, attr, value, data) {
         if (attr == 'style') {
-            // TODO: parse style json for object
-            data.style = value;
-        } else if (attr == 'class') data.class = { expr: value };
-        else if (attr in node) data.props[attr] = { expr: value };
+            data.style = { expr: value };
+            data.styleInserted = new Set();
+        } else if (attr == 'class') {
+            data.class = { expr: value };
+            data.classInserted = new Set();
+        } else if (attr in node) data.props[attr] = { expr: value };
         else data.attrs[attr] = { expr: value };
     }
 
@@ -192,79 +194,18 @@ class Basic {
     static setClasses(vnode) {
         if (vnode.data.class) {
             const data = vnode.data.class;
-            data.classInserted = new Set();
-            let expr = data.expr.trim();
-            if (expr.startsWith('{')) {
-                StrParser.match(expr, (key, valueExpr) => {
-                    this.setClass(vnode, data, vnode.getVars(), valueExpr, key);
-                });
-            } else {
-                Executor.expr(data.expr, data, vnode.getVars(), false, () => {
-                    //Контроль вставленных классов
-                    if (data.classInserted) this.clearClasses(vnode);
-                    if (data.current instanceof Object) {
-                        this.setClassesFromObject(vnode, data, data.current);
-                    }
-                });
+            //Добавляем метода добавления класса
+            data.add = name => {
+                vnode.node.addClass(name);
+                vnode.data.classInserted.add(name);
             }
+            //Добавляем метода удаления класса
+            data.remove = name => {
+                vnode.node.removeClass(name);
+                vnode.data.classInserted.delete(name);
+            }
+            this.setMultiple(vnode, data, vnode.data.classInserted);
         }
-    }
-
-    /**
-     * Установка классов по объекту
-     * @param {VNode} vnode 
-     * @param {object} data 
-     * @param {object} items 
-     */
-    static setClassesFromObject(vnode, data, items) {
-        //Устанавливаем наблюдателей при добавлении и удалении в объекте
-        items.getHandler().addObjectWatchers(items, changeParams => {
-            //Добавляем наблюдателя за классом
-            this.setClass(vnode, data, items, changeParams.prop, changeParams.prop);
-        }, changeParams => {
-            //Удаляем класс и наблюдателя
-            vnode.node.removeClass(changeParams.prop);
-            data.classInserted.delete(changeParams.prop);
-            items.getHandler().removeProp(changeParams.prop);
-        });
-        //Вставляем классы
-        for (const name in items) this.setClass(vnode, data, items, name, name);
-    }
-
-    /**
-     * Установка класса на элемент
-     * @param {VNode} vnode 
-     * @param {object} data 
-     * @param {string} name Название класса
-     * @param {boolean} started 
-     */
-    static setClass(vnode, data, current, expr, className, started = false) {
-        //Формируем объект для класса элемента
-        const internalData = { expr };
-        internalData.__proto__ = data;
-        Executor.expr(internalData.expr, internalData, current, false, () => {
-            //Добавляем компонент, для хука обновления
-            if (started) Dependency.saveCaller(vnode.component);
-            //Добавляем или удаляем класс в зависимости от значения
-            if (internalData.current) {
-                vnode.node.addClass(className);
-                data.classInserted.add(className);
-            } else {
-                vnode.node.removeClass(className);
-                data.classInserted.delete(className);
-            }
-        });
-        started = true;
-    }
-
-    /**
-     * Очистка классов из элемента
-     * @param {VNode} vnode 
-     */
-    static clearClasses(vnode) {
-        const data = vnode.data.class;
-        for (const name of data.classInserted) vnode.node.removeClass(name);
-        data.classInserted.clear();
     }
 
     /**
@@ -272,10 +213,81 @@ class Basic {
      * @param {VNode} vnode 
      */
     static setStyles(vnode) {
-        /*for (const name in this.data.style) {
-            const data = this.data.style[name];
-            Executor.exec('bind', this.node, name, data, this.getVars());
-        }*/
+        if (vnode.data.style) {
+            const data = vnode.data.style;
+            //Добавляем метода добавления стиля
+            data.add = (name, value) => {
+                vnode.node.addStyle(name, value);
+                vnode.data.styleInserted.add(name);
+            }
+            //Добавляем метода удаления стиля
+            data.remove = name => {
+                vnode.node.removeStyle(name);
+                vnode.data.styleInserted.delete(name);
+            }
+            this.setMultiple(vnode, data, vnode.data.styleInserted);
+        }
+    }
+
+    /**
+     * Установка свойств на элемент
+     * @param {VNode} vnode 
+     * @param {object} data 
+     * @param {Set} inserted 
+     */
+    static setMultiple(vnode, data, inserted) {
+        //Убираем пробелы с концов
+        let expr = data.expr.trim();
+        //Если это инлайн объект, то парсим его
+        if (expr.startsWith('{')) {
+            StrParser.match(expr, (key, valueExpr) => {
+                if (key.startsWith('"') || key.startsWith("'")) key = key.slice(1, -1);
+                this.setOne(vnode, data, vnode.getVars(), valueExpr, key);
+            });
+        } else {
+            Executor.expr(data.expr, data, vnode.getVars(), false, () => {
+                //Контроль вставленных свойств
+                if (inserted) {
+                    for (const name of inserted) data.remove(name);
+                }
+                if (data.current instanceof Object) {
+                    //Устанавливаем наблюдателей при добавлении и удалении в объекте
+                    data.current.getHandler().addObjectWatchers(data.current, changeParams => {
+                        //Добавляем наблюдателя за свойством
+                        this.setOne(vnode, data, data.current, `this['${changeParams.prop}']`, changeParams.prop);
+                    }, changeParams => {
+                        //Удаляем свойство и его наблюдателя
+                        data.remove(changeParams.prop);
+                        data.current.getHandler().removeProp(changeParams.prop);
+                    });
+                    //Устанавливаем свойства
+                    for (const name in data.current) this.setOne(vnode, data, data.current, `this['${name}']`, name);
+                }
+            });
+        }
+    }
+
+    /**
+     * Установка свойства на элемент
+     * @param {VNode} vnode 
+     * @param {object} data 
+     * @param {object} ctx Объект, откуда берутся свойства и значения
+     * @param {string} expr Выражение, которое надо вычислять
+     * @param {string} name Название свойства, которое будет меняться для элемента
+     * @param {boolean} started 
+     */
+    static setOne(vnode, data, ctx, expr, name, started = false) {
+        //Формируем объект для класса элемента
+        const internalData = { expr };
+        internalData.__proto__ = data;
+        Executor.expr(internalData.expr, internalData, ctx, false, () => {
+            //Добавляем компонент, для хука обновления
+            if (started) Dependency.saveCaller(vnode.component);
+            //Добавляем или удаляем класс или стиль в зависимости от значения
+            if (internalData.current) data.add(name, internalData.current);
+            else data.remove(name);
+        });
+        started = true;
     }
 
 }

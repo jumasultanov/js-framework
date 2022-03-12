@@ -42,6 +42,14 @@ class NodeElement {
         this.node.classList.remove(key);
     }
 
+    addStyle(key, value) {
+        this.node.style.setProperty(key, value);
+    }
+
+    removeStyle(key) {
+        this.node.style.removeProperty(key);
+    }
+
 }
 
 export default NodeElement

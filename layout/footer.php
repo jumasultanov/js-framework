@@ -8,7 +8,7 @@
                 isValid: false,
                 count: 0,
                 counter: 100,
-                zzz: true,
+                zzz: 300,
                 types: {
                     num: 'number',
                     str: 'string',

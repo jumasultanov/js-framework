@@ -29,7 +29,10 @@
                     <br>
                     <form class="mt-5">
                         <div class="form-group mb-3">
-                            <label for="exampleInputEmail1">Email address</label>
+                            <label for="exampleInputEmail1"
+                                :style="styles"
+                                :class='classes'
+                            >Email address</label>
                             <input type="email" class="form-control" placeholder="Enter email">
                         </div>
                         <div class="form-group mb-3">
@@ -40,32 +43,7 @@
                             <input type="checkbox" class="form-check-input" id="exampleCheck1" :checked="checked">
                             <label class="form-check-label" for="exampleCheck1">Check me out</label>
                         </div>
-                        <button 
-                            type="submit" 
-                            class="btn btn-primary"
-                            :class="
-                                { 
-                                    checked, 
-                                    test: !checked,
-                                    test1: customVar1, 
-                                    test2: 1, 
-                                    test3: 'tt', 
-                                    test4: 0, 
-                                    abc: classes.ttt, 
-                                    zzz: zzz || null,
-                                    arr: [
-                                        'test', false, null
-                                        ], 
-                                    buli: {
-                                        aa: 123, 
-                                        tre: [
-                                            '1,2,3,4', '567'
-                                        ],
-                                        suk: 'asd'+123 
-                                    },
-                                    ttest:1,
-                                } "
-                        >Submit</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
                     </form>
                 </div>
                 <?/*<div class="col-2" m-block="author">
