@@ -3,6 +3,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-4">
+                    <?/*
                     <div class="mb-5" m-block="description:TestController">
                         <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <button @click="click">change INNER {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
@@ -20,10 +21,11 @@
                         </p>
                         <p m-else>Preview text not found</p>
                     </div>
+                    */?>
                 </div>
                 <div class="col-5">
-                    <button id="test-btn" @click="click">Custom event {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
-                    <span m-for="nums">{{ item }}, </span>
+                    <button id="test-btn" @click="click">Custom event</button>
+                    <?/*<span m-for="nums">{{ item }}, </span>*/?>
                     <br>
                     <form class="mt-5">
                         <div class="form-group mb-3">
@@ -41,12 +43,32 @@
                         <button 
                             type="submit" 
                             class="btn btn-primary"
-                            :class="classes"
-                            class1="{ test: checked, test1: true, test2: 1, test3: 'tt', test4: 0}"
+                            :class="
+                                { 
+                                    checked, 
+                                    test: !checked,
+                                    test1: customVar1, 
+                                    test2: 1, 
+                                    test3: 'tt', 
+                                    test4: 0, 
+                                    abc: classes.ttt, 
+                                    zzz: zzz || null,
+                                    arr: [
+                                        'test', false, null
+                                        ], 
+                                    buli: {
+                                        aa: 123, 
+                                        tre: [
+                                            '1,2,3,4', '567'
+                                        ],
+                                        suk: 'asd'+123 
+                                    },
+                                    ttest:1,
+                                } "
                         >Submit</button>
                     </form>
                 </div>
-                <div class="col-2" m-block="author">
+                <?/*<div class="col-2" m-block="author">
                     <div class="mb-5" @click="counter++">
                         {{ counter }}
                         <div><span>Author:</span> <b>{{ author }}</b></div>
@@ -61,6 +83,7 @@
                         <div m-case="108"><span>Count:</span> <b>Сто восемь</b></div>-->
                     </div>
                 </div>
+                */?>
             </div>
             <div class="row">
                 <style>

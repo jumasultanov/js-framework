@@ -27,7 +27,7 @@ class TestController extends Controller {
     customVar1 = true;
     customVar2 = 10;
     customVar3 = 888;
-    checked = true;
+    checked = false;
     classes = {
         abc: true,
         xyz: 1,
@@ -114,7 +114,8 @@ class TestController extends Controller {
     click(ev) {
         //this.customVar3 -= 8;
         //this.counter += 10;
-        //this.checked = !this.checked;
+        console.log("CLICK");
+        this.checked = !this.checked;
         
         this.classes.abc = !this.classes.abc;
         this.classes.ttt = !this.classes.ttt;
