@@ -63,21 +63,6 @@ class AreaExpanding {
     }
 
     /**
-     * Добавление скрытого метода, который будет возвращать объект с компонентом и путь, где лежит свойство
-     * @param {object} vars 
-     * @param {string} key 
-     */
-    static setComponent(vars, key) {
-        Object.defineProperty(vars[key].__proto__, 'getComponent', 
-            Helper.getDescriptor((path = []) => {
-                path.push(key);
-                if (vars.getComponent) return vars.getComponent(path);
-                return { component: vars.$component, path };
-            }, false, false, false)
-        );
-    }
-
-    /**
      * Возвращает общий родительский объект с параметрами по умолчанию
      * @param {object} obj Объекта, для которого будет формироваться
      * @returns {object}

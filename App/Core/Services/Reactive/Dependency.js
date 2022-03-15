@@ -52,13 +52,11 @@ class Dependency {
 
     /**
      * Добавление наблюдателей для объекта или массива, чтобы следить за их изменением
-     * @param {object} vars 
      * @param  {...function} callbacks 
      */
-    addObjectWatchers(vars, ...callbacks) {
-        const getComponent = () => vars.getComponent().component;
-        this.add('$create', { method: callbacks[0], getComponent });
-        this.add('$delete', { method: callbacks[1], getComponent });
+    addObjectWatchers(...callbacks) {
+        this.add('$create', { method: callbacks[0] });
+        this.add('$delete', { method: callbacks[1] });
     }
 
     /**
@@ -114,9 +112,6 @@ class Dependency {
             Dependency.startCall();
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
-                //Сохраняем ответственный компонент для хука обновления
-                // TODO: может этот метод вообще не нужен
-                //if (watcher.getComponent) Dependency.saveCaller(watcher.getComponent());
                 //Выполняем функцию
                 if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
                 if (watcher.context) watcher.method.call(watcher.context, ...params);

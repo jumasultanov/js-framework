@@ -252,7 +252,7 @@ class Basic {
                 }
                 if (data.current instanceof Object) {
                     //Устанавливаем наблюдателей при добавлении и удалении в объекте
-                    data.current.getHandler().addObjectWatchers(data.current, changeParams => {
+                    data.current.getHandler().addObjectWatchers(changeParams => {
                         //Добавляем наблюдателя за свойством
                         this.setOne(vnode, data, data.current, `this['${changeParams.prop}']`, changeParams.prop);
                     }, changeParams => {

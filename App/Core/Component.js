@@ -134,8 +134,7 @@ class Component extends BaseComponent {
     saveWatcher(methodName, method) {
         this.watchers[methodName] = {
             context: this.vars,
-            method,
-            getComponent: () => this
+            method
         };
     }
 

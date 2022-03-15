@@ -46,7 +46,6 @@ class AreaProxy {
             vars[key] = new Proxy(item, LocalProxy);
             AreaExpanding.setCreate(item);
             AreaExpanding.setUpdate(item);
-            AreaExpanding.setComponent(vars, key);
         }
     }
 

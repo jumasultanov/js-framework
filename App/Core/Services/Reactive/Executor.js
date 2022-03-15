@@ -83,8 +83,6 @@ class Executor {
         this.$target = undefined;
         this.$inners = undefined;
         if (ctx.$component) {
-            //Добавляем метод для связки с компонентом
-            watcher.getComponent = () => ctx.$component;
             //Даем знать компоненту откуда пришел наблюдатель, что он попал в данную зависимость "dependency"
             ctx.$component.addUsedDeps(dependency, inserted);
         }
