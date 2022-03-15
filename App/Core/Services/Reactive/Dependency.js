@@ -5,9 +5,14 @@ class Dependency {
 
     //Счетчик для ИД наблюдателей
     static counter = 1;
+    //Максимальное кол-во вызовов для одного наблюдателя за один пул изменении
+    static maxLoopCall = 50;
+    //Последний компонент вызова для предотвращения рекурсии updated
+    static prevCallComp;
     //Счетчик цикла обновления
     static callCounter = 0;
     static callComponent = new Set();
+    static callWatchers = new Set();
 
     //Список зависимых полей и их функции
     dependencies = {};
@@ -30,6 +35,8 @@ class Dependency {
         //          если объект для перебора в методе "call" хранить в коллекции Set c id наблюдателей,
         //          а объекты с наблюдателями в другом объекте и доставать их оттуда по ИД
         if (!(prop in this.dependencies)) this.dependencies[prop] = {};
+        //Добавляем счетчик вызовов
+        watcher.countCall = 0;
         if (caller) {
             //Добавляем пустые объекты, если они отсутсвуют
             if (!('dependencies' in caller)) caller.dependencies = new Set();
@@ -113,8 +120,17 @@ class Dependency {
             Dependency.startCall();
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
-                //Выполняем функцию
+                //Проверка на активность
                 if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
+                //Изменяем счетчик и храним наблюдателя
+                watcher.countCall++;
+                if (watcher.countCall === 1) Dependency.callWatchers.add(watcher);
+                //Проверка на максимальное число выполнении за один пул
+                if (watcher.countCall > Dependency.maxLoopCall) {
+                    Dependency.clearCall();
+                    throw new Error(`Maximum call watcher registered: for prop -> ${prop}`);
+                }
+                //Выполняем функцию
                 if (watcher.context) watcher.method.call(watcher.context, ...params);
                 else watcher.method(...params);
             }
@@ -155,19 +171,33 @@ class Dependency {
     static endCall() {
         this.callCounter--;
         //Если все выполнилось то обнуляем список ответственных компонентов
-        if (!this.callCounter) this.clearCall();
+        if (!this.callCounter) this.endChange();
     }
 
     /**
-     * Хук обновления и очистка списка
+     * При событии окончания изменении в прокси SET, вызов хуков и очистка
      */
-    static clearCall() {
+    static endChange() {
         for (const comp of this.callComponent) {
+            if (this.prevCallComp === comp) continue;
+            this.prevCallComp = comp;
             if (comp.origin.hasOwnProperty('updated')) {
                 comp.vars.updated();
             }
         }
+        this.clearCall();
+    }
+
+    /**
+     * Очистка списков
+     */
+    static clearCall() {
+        this.prevCallComp = null;
+        this.callCounter = 0;
         this.callComponent.clear();
+        //Обновляем счетчик
+        for (const watcher of this.callWatchers) watcher.countCall = 0;
+        this.callWatchers.clear();
     }
 
     /**

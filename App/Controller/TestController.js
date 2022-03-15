@@ -109,21 +109,20 @@ class TestController extends Controller {
     watchCounter(value, old) {
         console.log('Change counter');
         console.log(value, old);
-        console.log(this);
-    }*/
-/*
+    }
+
     watchChecked(value, old) {
         console.log('Change checked');
         console.log(value, old);
-        console.log(this);
-    }*/
+    }
+*/
 
     click(ev) {
         //this.customVar3 -= 8;
         //this.counter += 10;
         console.log("CLICK");
         this.checked = !this.checked;
-        this.customVar2 += 10;
+        //this.customVar2 += 10;
 
         /*
         this.classes.abc = !this.classes.abc;
