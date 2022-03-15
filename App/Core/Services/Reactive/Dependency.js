@@ -115,7 +115,8 @@ class Dependency {
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
                 //Сохраняем ответственный компонент для хука обновления
-                if (watcher.getComponent) Dependency.saveCaller(watcher.getComponent());
+                // TODO: может этот метод вообще не нужен
+                //if (watcher.getComponent) Dependency.saveCaller(watcher.getComponent());
                 //Выполняем функцию
                 if (watcher.hasOwnProperty('enabled') && !watcher.enabled) continue;
                 if (watcher.context) watcher.method.call(watcher.context, ...params);
@@ -126,27 +127,30 @@ class Dependency {
     }
 
     /**
+     * При событии начала изменении в прокси SET, сохранение и вызов хуков
+     * @param {Component} comp 
+     */
+    static startChange(comp) {
+        //Только для компонентов
+        if (typeof comp == 'boolean') return;
+        const hookUp = comp.origin.hasOwnProperty('updated');
+        const hookBup = comp.origin.hasOwnProperty('beforeUpdate');
+        if (!hookUp && !hookBup) return;
+        //Нужно для понимания добавлиось ли в коллекцию
+        const size = this.callComponent.size;
+        //Сохраняем в коллекцию
+        this.callComponent.add(comp);
+        //Если есть хук beforeUpdate, то вызываем ее один раз
+        if (hookBup && this.callComponent.size > size) {
+            comp.vars.beforeUpdate();
+        }
+    }
+
+    /**
      * Увеличиваем счетчик перед выполнением наблюдателя
      */
     static startCall() {
         this.callCounter++;
-    }
-
-    /**
-     * Сохранение компонента для хуков обновления
-     * @param {Component} comp 
-     */
-    static saveCaller(comp) {
-        // TODO: Хук beforeUpdated - срабатывать должен не здесь, а перед изменением в proxy -> set
-        const hookUp = comp.origin.hasOwnProperty('updated');
-        const hookBup = comp.origin.hasOwnProperty('beforeUpdate');
-        const size = this.callComponent.size;
-        if (hookUp || hookBup) {
-            this.callComponent.add(comp);
-        }
-        if (hookBup && this.callComponent.size > size) {
-            comp.vars.beforeUpdate();
-        }
     }
     
     /**

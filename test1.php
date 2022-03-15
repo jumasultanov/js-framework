@@ -3,10 +3,10 @@
         <div class="container">
             <div class="row">
                 <div class="col-4">
-                    <?/*
-                    <div class="mb-5" m-block="description:TestController">
-                        <p :data-count="counter" @click="counter++;">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
-                        <button @click="click">change INNER {{ customVar3 }} -> <b>{{ customVar2 }}</b></button>
+                    <div class="mb-5" m-block="description:TestController2">
+                        <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
+                        <button @click="click">Click {{ checked }}</button>
+                        <?/*
                         
                         <p m-if="counter < 103 || counter > 112" style="color:green">less 103 or more 110: <b>{{ counter }}</b></p>
                         <p m-else-if="counter < 106 || counter > 110" style="color:blue">less 106 or more 110: <b>{{ counter }}</b></p>
@@ -20,8 +20,8 @@
                             <span m-block="descriptionPreview:TestController2"><span>Start preview text: {{ previewText }} = {{ desc }}</span></span>
                         </p>
                         <p m-else>Preview text not found</p>
+                        */?>
                     </div>
-                    */?>
                 </div>
                 <div class="col-5">
                     <button id="test-btn" @click="click">Custom event</button>

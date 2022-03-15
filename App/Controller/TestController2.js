@@ -24,6 +24,14 @@ class TestController2 extends Controller {
     doubleClick() {
         console.log('Double click', this);
     }
+    
+    click() {
+        console.log('Click 2', this);
+        this.name += '!';
+        this.checked = !this.checked;
+        this.counter++;
+        this.customVar2 += 10;
+    }
 
     watchName(value, old) {
         console.log('Change Name');

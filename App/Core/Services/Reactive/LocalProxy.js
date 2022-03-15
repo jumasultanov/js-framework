@@ -1,5 +1,5 @@
 import Directive from '../../Directive.js';
-import { Executor, AreaProxy } from '../../Service.js';
+import { Executor, AreaProxy, Dependency } from '../../Service.js';
 
 class LocalProxy {
 
@@ -42,6 +42,10 @@ class LocalProxy {
             target.__proto__ = val;
             return true;
         }
+        if (target.hasOwnProperty(prop)) {
+            //Реализация хуков для компонентов
+            Dependency.startChange(target.getHandler().component);
+        }
         //Выполняем частные методы директив
         const result = Directive.on('onProxySet', target, prop, val, receiver);
         if (result !== undefined) return result;
@@ -51,7 +55,7 @@ class LocalProxy {
             const result = Reflect.set(target, prop, val, receiver);
             //Выполняем все функции зависимости (слушатели прокси)
             if (result) {
-                //Проксируем
+                //Перед этим проксируем, если объект
                 AreaProxy.one(target, prop);
                 target.getHandler().call(prop, target[prop], oldValue);
             }

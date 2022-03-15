@@ -80,12 +80,12 @@ class TestController extends Controller {
 */
     //Срабатывает перед обновлением данных компонента и перед внесением его в DOM
     beforeUpdate() {
-        console.log('Before update');
+        console.log('Before update', this.checked);
     }
 
     //Срабатывает после обновления данных компонента и внесения его в DOM
     updated() {
-        console.log('Updated');
+        console.log('Updated', this.checked);
     }
 /*
     //Срабатывает перед уничтожением компонента
@@ -123,14 +123,16 @@ class TestController extends Controller {
         //this.counter += 10;
         console.log("CLICK");
         this.checked = !this.checked;
-        
+        this.customVar2 += 10;
+
+        /*
         this.classes.abc = !this.classes.abc;
         this.classes['t-t-t'] = !this.classes['t-t-t'];
         this.classes.WWW = !this.classes.WWW;
         delete this.classes.xyz;
         this.styles.opacity += 0.1;
         this.styles['font-size'] = (parseFloat(this.styles['font-size'])+1) + 'px';
-        delete this.styles['font-weight'];
+        delete this.styles['font-weight'];*/
     }
 }
 
