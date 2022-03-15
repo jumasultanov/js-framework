@@ -3,7 +3,11 @@ import { AreaExpanding } from '../../Service.js';
 
 class Dependency {
 
+    //Счетчик для ИД наблюдателей
     static counter = 1;
+    //Счетчик цикла обновления
+    static callCounter = 0;
+    static callComponent = new Set();
 
     //Список зависимых полей и их функции
     dependencies = {};
@@ -11,9 +15,6 @@ class Dependency {
     component;
     //Список связанных ИД и свойств
     unions = {};
-    //Счетчик цикла обновления
-    static callCounter = 0;
-    static callComponent = new Set();
 
     constructor(component) {
         this.component = component;
