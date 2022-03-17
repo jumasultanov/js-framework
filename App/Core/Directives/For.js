@@ -57,6 +57,7 @@ class For {
             as = as.replace(/[\(\)\s]/g, '').split(',');
         }
         data.as = as;
+        data.iterating = true;
         //Собираем и сохраняем последующие блоки конструкции
         const next = parser.unionNodes(node.nextElementSibling, this.nextConstructions, list);
         return { expr, list, next, readyComponent: false }

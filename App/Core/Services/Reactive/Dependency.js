@@ -6,7 +6,7 @@ class Dependency {
     //Счетчик для ИД наблюдателей
     static counter = 1;
     //Максимальное кол-во вызовов для одного наблюдателя за один пул изменении
-    static maxLoopCall = 50;
+    static maxLoopCall = 100;
     //Последний компонент вызова для предотвращения рекурсии updated
     static prevCallComp;
     //Счетчик цикла обновления
@@ -126,7 +126,7 @@ class Dependency {
                 watcher.countCall++;
                 if (watcher.countCall === 1) Dependency.callWatchers.add(watcher);
                 //Проверка на максимальное число выполнении за один пул
-                if (watcher.countCall > Dependency.maxLoopCall) {
+                if (!watcher.ignoreCount && watcher.countCall > Dependency.maxLoopCall) {
                     Dependency.clearCall();
                     throw new Error(`Maximum call watcher registered: for prop -> ${prop}`);
                 }

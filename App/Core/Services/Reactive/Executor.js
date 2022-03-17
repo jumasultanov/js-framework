@@ -70,6 +70,7 @@ class Executor {
         const dependency = this.$target.getHandler();
         //Создаем наблюдателя
         const watcher = { method: this.$dep };
+        if (data.iterating) watcher.ignoreCount = true;
         let caller = null;
         if (disactivable) {
             watcher.enabled = true;
