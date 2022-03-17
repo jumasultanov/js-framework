@@ -1,7 +1,7 @@
 import Directive from "../Directive.js";
 import Area from "../Area.js";
 import Component from "../Component.js";
-import { Executor, AreaProxy, AreaExpanding } from "../Service.js";
+import { Executor, AreaProxy, AreaExpanding, Block } from "../Service.js";
 
 class For {
 
@@ -198,8 +198,6 @@ class For {
         let data = vnode.data.constr.for;
         //Выполнение выражения для цикла
         Executor.expr(data.expr, data, vnode.getVars(), false, params => {
-            // TODO: Переделать, т.к. добавление и удаление из  массива
-            //          будет происходить через addObjectWatchers
             let forElse;
             //Обощаем данные для конкретного изменения
             this.vnode = vnode;
@@ -222,10 +220,11 @@ class For {
                     if (parent) AreaExpanding.setWatcher(parent.vars, data.expr);
                     //Обновляем весь список
                     if (count) {
-                        // TODO: сделать вставку в DOM через documentFragment, чтобы при каждой итерации не заносился в DOM
+                        const fragment = Block.getFragment();
                         for (const key in data.current) {
-                            this.componentInsert(key, this.vnode.data.space);
+                            this.componentInsert(key, fragment, true);
                         }
+                        Block.insert(fragment, this.vnode.data.space);
                         return;
                     }
                 }
@@ -298,9 +297,9 @@ class For {
      * @param {string} key 
      * @param {Node} space Элемент, перед которой будет вставлено
      */
-    static componentInsert(key, space) {
+    static componentInsert(key, space, append = false) {
         const insertComp = this.data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(this.data, key));
-        this.vnode.component.insertChild(insertComp, space, this.vnode.data.inserted);
+        this.vnode.component.insertChild(insertComp, space, this.vnode.data.inserted, append);
     }
 
     /**

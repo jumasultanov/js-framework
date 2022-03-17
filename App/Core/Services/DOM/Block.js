@@ -51,6 +51,14 @@ class Block {
     }
 
     /**
+     * Возвращает пустой фрагмент
+     * @returns DocumentFragment
+     */
+    static getFragment() {
+        return document.createDocumentFragment();
+    }
+
+    /**
      * Заменяет элемент HTML-комментарием и возвращает его
      * @param {Node} node 
      * @returns {Comment}
@@ -73,9 +81,11 @@ class Block {
      * Вставка элемента
      * @param {Node} insert Вставляемые элемент
      * @param {Node} savePoint Вставка до этого элемента
+     * @param {Boolean} append Если нужно вставить внутрь savePoint
      */
-    static insert(insert, savePoint) {
-        savePoint.parentNode.insertBefore(insert, savePoint);
+    static insert(insert, savePoint, append = false) {
+        if (append) savePoint.appendChild(insert);
+        else savePoint.parentNode.insertBefore(insert, savePoint);
     }
 
     /**

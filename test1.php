@@ -25,7 +25,21 @@
                 </div>
                 <div class="col-5">
                     <button id="test-btn" @click="click">Custom event</button>
-                    <?/*<span m-for="nums">{{ item }}, </span>*/?>
+                    <div m-for="nums">
+                        <div>
+                            <div>
+                                <span>
+                                    <i>{{ item }}</i>: 
+                                    <b :style="{color: 'rgb('+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+')'}">{{ Math.round(Math.random()*1000) }}</b>
+                                </span>
+                                <div style="position:absolute">
+                                    <div>
+                                        <div><a href=""><span><span><span><i><b>.</b></i></span></span></span></a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <br>
                     <form class="mt-5">
                         <div class="form-group mb-3">

@@ -207,12 +207,13 @@ class Component extends BaseComponent {
      * @param {Component} component Вставляемый компонент
      * @param {Node} savePoint Элемент, перед которым вставится
      * @param {Set} inserted Список уже вставленных компонентов 
+     * @param {Boolean} append Если нужно вставить внутрь savePoint
      */
-    insertChild(component, savePoint, inserted) {
+    insertChild(component, savePoint, inserted, append = false) {
         this.children[component.name] = component;
         inserted.add(component);
         //Добавляем в DOM
-        Block.insert(component.element, savePoint);
+        Block.insert(component.element, savePoint, append);
         //Запускаем
         Component.enable(component);
     }
