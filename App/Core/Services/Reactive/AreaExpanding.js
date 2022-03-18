@@ -1,3 +1,4 @@
+import Directive from '../../Directive.js';
 import { Helper, AreaProxy } from '../../Service.js';
 
 class AreaExpanding {
@@ -68,8 +69,8 @@ class AreaExpanding {
      * @returns {object}
      */
     static getRoot(obj) {
-        const isArray = obj instanceof Array;
-        const root = isArray ? [] : {};
+        const isArray = Array.isArray(obj);
+        const root = Object.create(Object.getPrototypeOf(obj));
         Object.defineProperty(root, 'isArray', Helper.getDescriptor(isArray, false, false, false));
         Object.defineProperty(root, 'isProxy', Helper.getDescriptor(true, false, false, false));
         return root;
