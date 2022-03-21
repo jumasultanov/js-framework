@@ -239,6 +239,22 @@ class Component extends BaseComponent {
     }
 
     /**
+     * Переименовываем дочерний компонент
+     * @param {Component} component Переименовываемый компонент
+     * @param {string} name Новое название
+     */
+    renameChild(component, name) {
+        //Меняем в списке данных
+        Area.rename(component.path, name);
+        //Меняем имя
+        const oldName = component.name;
+        component.updateName(name);
+        this.children[name] = component;
+        //Удаляем старое имя из списка
+        delete this.children[oldName];
+    }
+
+    /**
      * Удаляет дочерний компонент с удалением из DOM
      * @param {Component} component Удаляемый компонент
      * @param {Set|null} inserted Список уже вставленных компонентов
