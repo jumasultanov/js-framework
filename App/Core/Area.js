@@ -122,6 +122,19 @@ class Area {
     }
 
     /**
+     * Изменяет название ключа для области
+     * @param {string[]|string} path 
+     * @param {*} name Новое имя ключа
+     */
+    static rename(path, name) {
+        const area = this.findFull(path.slice(0, -1));
+        if (!area) return;
+        const oldName = path[path.length - 1];
+        area[name] = area[oldName];
+        delete area[oldName];
+    }
+
+    /**
      * Возвращает пустой объект и его прокси
      * @param {Proxy} parentProxy 
      * @returns {object}
