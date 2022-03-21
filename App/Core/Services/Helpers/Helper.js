@@ -22,6 +22,19 @@ class Helper {
         })(start, start + length - 1)];
     }
 
+    /**
+     * Возвращает число, ограничивая минимальным и максимальным значением
+     * @param {number} num 
+     * @param {number} min 
+     * @param {number} max 
+     * @returns {number}
+     */
+    static limit(num, min, max) {
+        if (num < min) return min;
+        if (num > max) return max;
+        return num;
+    }
+
 }
 
 export default Helper
