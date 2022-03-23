@@ -222,8 +222,9 @@ class Component extends BaseComponent {
      * Меняет местами два дочерних компонента
      * @param {Component} component1 
      * @param {Component} component2 
+     * @param {boolean} swapBlock Если нужно блоки поменять местами
      */
-    swapChild(component1, component2) {
+    swapChild(component1, component2, swapBlock = false) {
         //Меняем имена
         const newName = component2.name;
         const oldName = component1.name;
@@ -232,10 +233,10 @@ class Component extends BaseComponent {
         //Меняем в списке дочерних компонентов
         this.children[newName] = component1;
         this.children[oldName] = component2;
-        //Меняем в DOM
-        Block.swap(component1.element, component2.element);
         //Меняем в списке данных
         Area.move(component1.path, component2.path);
+        //Меняем в DOM
+        if (swapBlock) Block.swap(component1.element, component2.element);
     }
 
     /**
@@ -268,22 +269,6 @@ class Component extends BaseComponent {
         //Удаляем данные, если нужно, иначе выключаем
         if (die) Component.die(component);
         else Component.disable(component);
-    }
-
-    /**
-     * Собирает все дочерние компоненты в одном месте, сортируя по именам
-     * @param {string[]} names Список названии
-     * @param {Node} savePoint Элемент, перед которым будут вставляться
-     */
-    collectChildrenBlocks(names, savePoint) {
-        //Перебираем с конца
-        for (let i = names.length - 1; i > -1; i--) {
-            const element = this.children[names[i]].element;
-            //Если перед элементом уже стоит этот блок, то вставку не делаем
-            if (element !== savePoint.previousSibling) Block.insert(element, savePoint);
-            //Сдвигаемся
-            savePoint = savePoint.previousSibling;
-        }
     }
 
     /**
