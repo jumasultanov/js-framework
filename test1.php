@@ -29,7 +29,7 @@
                         <div>
                             <div>
                                 <span>
-                                    <i>{{ item }}</i>: 
+                                    <i>{{ key }} -> {{ item }}</i>: 
                                     <b :style="{color: 'rgb('+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+')'}">{{ Math.round(Math.random()*1000) }}</b>
                                 </span>
                                 <div style="position:absolute">
@@ -40,6 +40,7 @@
                             </div>
                         </div>
                     </div>
+                    <p m-for-else :style="warning">Empty</p>
                     <br>
                     <form class="mt-5">
                         <div class="form-group mb-3">

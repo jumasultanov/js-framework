@@ -1,7 +1,7 @@
 import Directive from "../Directive.js";
 import Area from "../Area.js";
 import Component from "../Component.js";
-import { Executor, AreaProxy, AreaExpanding, Block } from "../Service.js";
+import { Executor, AreaExpanding, Block, Helper } from "../Service.js";
 
 class For {
 
@@ -15,8 +15,10 @@ class For {
     static ACTION_MOVE = 2;
     static ACTION_REVERSE = 3;
     static ACTION_SORT = 4;
-    //Предыдущее прочитанное свойство массива
-    static prevPosition = null;
+    //Методы перехвата
+    static methods = [ 'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse' ];
+    //Объект из прототипа массива
+    static arrayMethods = Object.create(Array.prototype);
 
     /**
      * Регистрация директивы
@@ -25,11 +27,139 @@ class For {
         //Добавляем слушателей на события
         Directive
             .include('onParse', this)
-            .include('onProxyGet', this)
-            .include('onProxySet', this)
-            .include('onProxyDeleteProperty', this)
             .include('onExecute', this)
             .include('onDestroy', this);
+        //Создает перехватывающие методы для методов массива
+        this.createProto();
+    }
+
+    /**
+     * Создаем методы перехвата для массивов
+     */
+    static createProto() {
+        this.methods.forEach(method => {
+            //Храним оригинальный метод для последующего вызова
+            const original = Array.prototype[method];
+            //Получаем метод перехватчик в текущем классе
+            const func = this['on' + method[0].toUpperCase() + method.slice(1)];
+            //Добавляем в объект метод перехватчик
+            Object.defineProperty(this.arrayMethods, method,
+                Helper.getDescriptor(function() {
+                    //Собираем аргументы
+                    let args = [];
+                    let len = arguments.length;
+                    let arrLen = this.length;
+                    while (len--) args[len] = arguments[len];
+                    //Вызываем оригинальный метод
+                    let result = original.apply(this, args);
+                    //Вызываем метод перехватчик
+                    func.call(For, this, arrLen, args);
+                    return result;
+                }, true, true, false)
+            );
+        });
+    }
+
+    /**
+     * Устанавливаем объект перехватчика для объекта, который будет проитерирован
+     * @param {object} data 
+     */
+    static setRroto(data) {
+        //Если уже был добавлен флаг итерируемого, иначе добавляем
+        if (data.__proto__.hasOwnProperty('iterating')) return;
+        AreaExpanding.setIterating(data);
+        //Если перебирается массив, то ловим вызов методов массива
+        if (data.isArray) {
+            data.__proto__.__proto__ = this.arrayMethods;
+        }
+    }
+
+    /**
+     * Перехват метода Push
+     * @param {any[]} target Целевой массив
+     * @param {number} prevLength Длина массива перед изменением
+     * @param {any[]} inserted Массив аргументов вызова метода
+     */
+    static onPush(target, prevLength, inserted) {
+        if (!inserted.length) return;
+        let keys = Helper.range(prevLength, inserted.length);
+        this.arrayChange(target, keys, this.ACTION_PUSH);
+    }
+
+    /**
+     * Перехват метода Unshift
+     */
+    static onUnshift(target, prevLength, inserted) {
+        if (!inserted.length) return;
+        let keys = Helper.range(0, inserted.length);
+        this.arrayChange(target, [0, inserted.length, prevLength], this.ACTION_MOVE);
+        this.arrayChange(target, keys, this.ACTION_PUSH);
+        this.movedComp = null;
+    }
+
+    /**
+     * Перехват метода Pop
+     */
+    static onPop(target, prevLength) {
+        if (prevLength < 1) return;
+        this.arrayChange(target, target.length, this.ACTION_DELETE);
+    }
+
+    /**
+     * Перехват метода Shift
+     */
+    static onShift(target, prevLength) {
+        if (prevLength < 1) return;
+        this.arrayChange(target, 0, this.ACTION_DELETE);
+        this.arrayChange(target, [1, 0, target.length], this.ACTION_MOVE);
+        this.movedComp = null;
+    }
+
+    /**
+     * Перехват метода Splice
+     */
+    static onSplice(target, prevLength, inserted) {
+        //Собираем аргументы
+        let index = +inserted[0];
+        let deleteCount = +inserted[1];
+        inserted.splice(0, 2);
+        //Преобразуем индексы и кол-во удалении
+        if (index < 0) index = prevLength + index;
+        index = Helper.limit(index, 0, prevLength);
+        deleteCount = Helper.limit(deleteCount, 0, prevLength - index);
+        //Удаляем, если есть что удалять
+        if (deleteCount > 0) {
+            let keys = Helper.range(index, deleteCount);
+            this.arrayChange(target, keys, this.ACTION_DELETE);
+        }
+        //Сдвигаем, если сдвигается и существующий индекс
+        let diff = inserted.length - deleteCount;
+        let moveIndex = index + deleteCount;
+        if (diff !== 0 && moveIndex < prevLength) {
+            let newIndex = moveIndex + diff;
+            this.arrayChange(target, [moveIndex, newIndex, prevLength - moveIndex], this.ACTION_MOVE);
+        }
+        //Добавляем, если есть что добавлять
+        if (inserted.length) {
+            let keys = Helper.range(index, inserted.length);
+            this.arrayChange(target, keys, this.ACTION_PUSH);
+        }
+    }
+
+    /**
+     * Перехват метода Reverse
+     */
+    static onReverse(target, prevLength) {
+        if (prevLength < 2) return;
+        this.arrayChange(target, null, this.ACTION_REVERSE);
+    }
+
+    /**
+     * Перехват метода Sort
+     */
+    static onSort(target, prevLength) {
+        if (prevLength < 2) return;
+        this.arrayChange(target, null, this.ACTION_SORT);
     }
 
     /**
@@ -64,113 +194,6 @@ class For {
     }
 
     /**
-     * Событие при чтении свойства из объекта
-     * @param {object} target Объект
-     * @param {string} prop Название свойства объекта
-     * @param {object} receiver Целевой объект
-     */
-    static onProxyGet(target, prop) {
-        if (!target.iterating) return undefined;
-        if (target.isArray) {
-            if (!isNaN(Number(prop))) {
-                this.prevPosition = prop;
-            } else if (prop == 'sort') {
-                this.arraySort = [];
-                this.arrayLastIndex = target.length - 1;
-            } else if (prop == 'reverse') {
-                this.arrayReverse = [];
-                this.arrayLength = target.length - target.length % 2;
-            }
-        }
-    }
-
-    /**
-     * Событие при изменении свойства из объекта
-     * @param {object} target Объект
-     * @param {string} prop Название свойства объекта
-     * @param {any} val Значение свойства объекта
-     * @param {object} receiver Целевой объект
-     */
-    static onProxySet(target, prop, val, receiver) {
-        if (!target.iterating) return undefined;
-        //Определяем настройки для действий в конце метода
-        let method = null;
-        let key = prop;
-        let changeBefore = true, toProxy = true;
-        if (target.isArray) {
-            //Если свойство не число, то ничего не делаем для массива
-            if (isNaN(Number(prop))) return undefined;
-            //Если ключ не занят, то операция добавления
-            if (!(prop in target)) {
-                method = this.ACTION_PUSH;
-            } else {
-                toProxy = false;
-                if (this.arraySort) {
-                    if (target[prop] !== val) this.arraySort.push(prop);
-                    if (prop == this.arrayLastIndex) {
-                        key = this.arraySort;
-                        this.arraySort = null;
-                        method = this.ACTION_SORT;
-                    }
-                } else if (this.arrayReverse) {
-                    this.arrayReverse.push(prop);
-                    if (this.arrayReverse.length == this.arrayLength) {
-                        key = this.arrayReverse;
-                        this.arrayReverse = null;
-                        method = this.ACTION_REVERSE;
-                    }
-                } else {
-                    if (this.prevPosition === null || target[this.prevPosition] !== val) {
-                        toProxy = true;
-                        method = this.ACTION_PUSH;
-                    } else {
-                        changeBefore = false;
-                        method = this.ACTION_MOVE;
-                        key = { value: prop, prev: this.prevPosition };
-                    }
-                }
-            }
-            this.prevPosition = null;
-        } else {
-            method = this.ACTION_PUSH;
-        }
-        //Основные действия
-        let success = false;
-        if (changeBefore) success = Reflect.set(target, prop, val, receiver);
-        if (toProxy) AreaProxy.one(target, prop);
-        if (method !== null) this.arrayChange(target, key, method);
-        if (!changeBefore) success = Reflect.set(target, prop, val, receiver);
-        return success;
-    }
-
-    /**
-     * Событие при удалении свойства из объекта
-     * @param {object} target Объект
-     * @param {string} prop Название свойства объекта
-     * @param {object} receiver Целевой объект
-     */
-    static onProxyDeleteProperty(target, prop, receiver) {
-        if (!target.iterating) return undefined;
-        if (target.isArray && isNaN(Number(prop))) return undefined;
-        this.arrayChange(target, prop, this.ACTION_DELETE);
-        return Reflect.deleteProperty(target, prop, receiver);
-    }
-
-    /**
-     * Вызывает событие изменения в массиве через зарегистрированные зависимости в родительском объекте
-     * @param {object} target Перебираемый объект
-     * @param {number|object} index Ключ измененного элемента
-     * @param {number} change Константа из this.ACTION_*
-     */
-    static arrayChange(target, index, change) {
-        const root = target.getWatcher();
-        root.vars.getHandler().call(root.key, {
-            force: true,
-            change, index
-        });
-    }
-
-    /**
      * Событие при активации конструкции
      * @param {VNode} vnode 
      */
@@ -197,37 +220,31 @@ class For {
      */
     static constr(vnode) {
         let data = vnode.data.constr.for;
+        let forElse;
+        if (data.next) forElse = vnode.data.constr[data.next];
         //Выполнение выражения для цикла
         Executor.expr(data.expr, data, vnode.getVars(), false, params => {
-            let forElse;
-            //Обощаем данные для конкретного изменения
-            this.vnode = vnode;
-            this.data = data;
-            this.namePrefix = `${data.component.name}:`;
-            if (data.next) forElse = vnode.data.constr[data.next];
             if (data.current instanceof Object) {
+                //Обобщаем данные для конкретного изменения
+                this.vnode = vnode;
+                this.data = data;
+                this.namePrefix = `${data.component.name}:`;
                 const count = Object.keys(data.current).length;
                 if (count && forElse && forElse.component.isActive()) {
                     vnode.component.removeChild(forElse.component, vnode.data.inserted);
                 }
                 if (params && 'change' in params) {
                     this.componentChange(params);
-                    if (params.change !== this.ACTION_DELETE || count > 1) return;
+                    if (count > 0) return;
                 } else {
-                    //Добавляем флаг, что объект будет итерирован
-                    AreaExpanding.setIterating(data.current);
+                    //Добавляем флаг и отслеживаем, что объект будет проитерирован
+                    this.setRroto(data.current);
                     //Добавляем скрытый метод getWatcher, которая будет вести до родителя оригинального объекта
+                    // TODO: data.expr лучше не использовать, т.к. в выражение может указана операция, типа вызов функции
                     const parent = Area.getOwnKey(data.component.path.slice(0, -1), data.expr);
                     if (parent) AreaExpanding.setWatcher(parent.vars, data.expr);
                     //Обновляем весь список
-                    if (count) {
-                        const fragment = Block.getFragment();
-                        for (const key in data.current) {
-                            this.componentInsert(key, fragment, true);
-                        }
-                        Block.insert(fragment, this.vnode.data.space);
-                        return;
-                    }
+                    if (count) return this.componentPush(Object.keys(data.current));
                 }
             }
             if (forElse) {
@@ -238,115 +255,174 @@ class For {
     }
 
     /**
+     * Вызывает событие изменения в массиве через зарегистрированные зависимости в родительском объекте
+     * @param {object} target Перебираемый объект
+     * @param {number|object} index Ключ измененного элемента
+     * @param {number} change Константа из this.ACTION_*
+     */
+    static arrayChange(target, index, change) {
+        const root = target.getWatcher();
+        root.vars.getHandler().call(root.key, {
+            force: true,
+            change, index
+        });
+    }
+
+    /**
      * Изменение компонентов в перебранном объекте
      * @param {object} params 
      */
     static componentChange(params) {
         const key = params.index;
-        switch (params.change) {
-            case this.ACTION_PUSH:
-                this.componentPush(key);
-                break;
-            case this.ACTION_MOVE:
-                this.componentSwap(key.prev, key.value);
-                break;
-            case this.ACTION_REVERSE:
-                for (let i = 0; i < key.length; i += 2) {
-                    const first = key[i];
-                    const second = key[i + 1];
-                    this.componentSwap(first, second);
-                }
-                break;
-            case this.ACTION_SORT:
-                this.componentSort(key);
-                break;
-            case this.ACTION_DELETE:
-                this.componentDelete(this.namePrefix + key);
-                break;
+        if (params.change == this.ACTION_PUSH)      return this.componentPush(key);
+        if (params.change == this.ACTION_MOVE)      return this.componentRenameAll(key);
+        if (params.change == this.ACTION_REVERSE)   return this.componentReverse();
+        if (params.change == this.ACTION_SORT)      return this.componentSort();
+        if (params.change == this.ACTION_DELETE)    return this.componentDelete(key);
+    }
+
+    /**
+     * Вставка компонентов по ключам
+     * @param {string[]} keys 
+     */
+    static componentPush(keys) {
+        //Создаем фрагмент и добавляем туда элементы компонентов
+        const fragment = Block.getFragment();
+        for (const key of keys) {
+            this.componentInsert(key, fragment);
+        }
+        let before = this.vnode.data.space;
+        //Если был сдвиг, то вставка будет перед началом сдвига
+        if (this.movedComp) {
+            before = this.movedComp.element;
+            this.movedComp = null;
+        }
+        //Вставка фрагмента перед before
+        Block.insert(fragment, before);
+    }
+
+    /**
+     * Перемещение индексов компонентов
+     * @param {number[]} limits Данные по перемещению [
+     *          0: Первоначальный индекс, который надо переместить,
+     *          1: Новый индекс для первоначального перемещаемого индекса,
+     *          2: Кол-во элементов перемещения после указанного индекса
+     *      ]
+     */
+    static componentRenameAll(limits) {
+        const diff = Math.abs(limits[0] - limits[1]);
+        if (!diff) return;
+        const isDown = limits[0] < limits[1];
+        if (isDown) {
+            //Перебираем с конца вниз
+            for (let i = limits[2] - 1; i >= 0; i--) {
+                const newK = limits[0] + diff + i;
+                this.componentRename(limits[0] + i, newK, i === 0);
+            }
+        } else {
+            //Перебираем с начала вверх
+            for (let i = 0; i < limits[2]; i++) {
+                const newK = limits[0] - diff + i;
+                this.componentRename(limits[0] + i, newK, i === 0);
+            }
         }
     }
 
     /**
-     * Вставка компонента с проверкой на место вставки  
-     * @param {string} key 
+     * Переименовывание компонента
+     * @param {number} fromKey Перемещаемый ключ
+     * @param {number} toKey Новый ключ
+     * @param {boolean} saveComp Если нужно сохранить компонент
      */
-    static componentPush(key) {
-        const name = this.namePrefix + key;
-        let before = this.vnode.data.space;
-        if (name in this.vnode.component.children) {
-            before = this.componentDelete(name, true);
-        }
-        this.componentInsert(key, before);
+    static componentRename(fromKey, toKey, saveComp = false) {
+        //Ищем и переименовываем компонент и данные
+        const comp = this.vnode.component.children[this.namePrefix + fromKey];
+        if (!comp) return;
+        this.vnode.component.renameChild(comp, this.namePrefix + toKey);
+        //Меняем индекс в данных компонента
+        comp.vars[this.data.as[1]||'key'] = String(toKey);
+        //Храним компонент для последующих вставок перед ним
+        if (saveComp) this.movedComp = comp;
     }
 
     /**
      * Удаление компонента
-     * @param {string} name Название компонента
-     * @param {boolean} getNext Возвращает следующий элемент после удаленной
-     * @returns {null|Node}
+     * @param {string|string[]} key Название компонента
      */
-    static componentDelete(name, getNext = false) {
-        const deleteComp = this.vnode.component.children[name];
-        let el;
-        if (getNext) el = deleteComp.element.nextSibling;
-        this.vnode.component.removeChild(deleteComp, this.vnode.data.inserted, true);
-        return el;
+    static componentDelete(key) {
+        //Если передан массив ключей
+        if (Array.isArray(key)) {
+            for (let i = 0; i < key.length; i++) this.componentDelete(key[i]);
+            return;
+        }
+        //Ищем компонент по ключу и удаляем
+        const comp = this.vnode.component.children[this.namePrefix + key];
+        if (!comp) return;
+        this.vnode.component.removeChild(comp, this.vnode.data.inserted, true);
     }
 
     /**
      * Создание и вставка компонента по ключу
      * @param {string} key 
-     * @param {Node} space Элемент, перед которой будет вставлено
+     * @param {Node} space Элемент, внутрь которого будет вставлено
      */
-    static componentInsert(key, space, append = false) {
-        const insertComp = this.data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(this.data, key));
-        this.vnode.component.insertChild(insertComp, space, this.vnode.data.inserted, append);
+    static componentInsert(key, space) {
+        const comp = this.data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(this.data, key));
+        this.vnode.component.insertChild(comp, space, this.vnode.data.inserted, true);
     }
 
     /**
-     * Смена местами двух компонентов
-     * @param {string} key1 
-     * @param {string} key2 
+     * Переворачивание списка компонентов
      */
-    static componentSwap(key1, key2) {
-        const comp1 = this.vnode.component.children[this.namePrefix + key1];
-        const comp2 = this.vnode.component.children[this.namePrefix + key2];
-        this.vnode.component.swapChild(comp1, comp2);
-        comp1.vars[this.data.as[1]||'key'] = key2;
-        comp2.vars[this.data.as[1]||'key'] = key1;
-    }
-
-    /**
-     * Сортировка компонентов по карте
-     * @param {string[]} keys 
-     */
-    static componentSort(keys) {
-        let tempComps = {};
-        let tempAreas = {};
-        const areas = Area.findFull(this.data.component.path.slice(0, -1));
-        for (let i = 0; i < keys.length; i++) {
-            const name = this.namePrefix + keys[i];
-            const value = this.data.current[keys[i]];
-            for (let j = 0; j < keys.length; j++) {
-                if (i === j) continue;
-                const foundName = this.namePrefix + keys[j];
-                const comp = this.vnode.component.children[foundName];
-                if (comp.vars[this.data.as[0]||'item'] === value) {
-                    comp.updateName(name);
-                    comp.vars[this.data.as[1]||'key'] = keys[i];
-                    tempComps[name] = comp;
-                    tempAreas[name] = areas[foundName];
-                    break;
+    static componentReverse() {
+        const len = this.data.current.length;
+        const half = Math.ceil((len - 1) / 2);
+        //С предпоследнего элемента идем наверх и перемещаем перед спец.элементом
+        for (let i = len - 1; i >= 0; i--) {
+            const comp = this.vnode.component.children[this.namePrefix + i];
+            if (!comp) continue;
+            Block.insert(comp.element, this.vnode.data.space);
+            //Если дошли до оставшейся половины, то меняем данные компонентов с противоположными
+            if (i < half) {
+                //Ищем нужный компонент
+                const replaceKey = len - 1 - i;
+                const replace = this.vnode.component.children[this.namePrefix + replaceKey];
+                if (replace) {
+                    //Меняем компоненты
+                    this.vnode.component.swapChild(replace, comp);
+                    replace.vars[this.data.as[1]||'key'] = String(i);
+                    comp.vars[this.data.as[1]||'key'] = String(replaceKey);
                 }
             }
         }
-        for (let name in tempComps) {
-            this.vnode.component.children[name] = tempComps[name];
-            areas[name] = tempAreas[name];
+    }
+
+    /**
+     * Обновление компонентов относительно данных (после сортировки)
+     */
+    static componentSort() {
+        const len = this.data.current.length;
+        const item = this.data.as[0]||'item';
+        //Начинаем проверять в конца
+        for (let i = len - 1; i >= 0; i--) {
+            const comp = this.vnode.component.children[this.namePrefix + i];
+            if (!comp) continue;
+            const value = this.data.current[i];
+            //Если значения не совпадают, то ищем выше до этого индекса
+            if (comp.vars[item] !== value) {
+                for (let j = 0; j < i; j++) {
+                    const replace = this.vnode.component.children[this.namePrefix + j];
+                    if (!replace) continue;
+                    //Если нашлось, то меняем местами компоненты и блоки
+                    if (value === replace.vars[item]) {
+                        this.vnode.component.swapChild(replace, comp, true);
+                        replace.vars[this.data.as[1]||'key'] = String(i);
+                        comp.vars[this.data.as[1]||'key'] = String(j);
+                        break;
+                    }
+                }
+            }
         }
-        let names = [];
-        for (let index in this.data.current) names.push(this.data.component.name + ':' + index);
-        this.vnode.component.collectChildrenBlocks(names, this.vnode.data.space);
     }
 
     /**
