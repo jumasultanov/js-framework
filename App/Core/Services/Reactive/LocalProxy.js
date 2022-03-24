@@ -58,6 +58,8 @@ class LocalProxy {
                 //Перед этим проксируем, если объект
                 AreaProxy.one(target, prop);
                 target.getHandler().call(prop, target[prop], oldValue);
+                //Вызываем наблюдателя за обновлением элемента
+                target.$update('$update', { prop, val: oldValue });
             }
             return result;
         } else { //Иначе изменяем в родительском объекте, пока не дойдем до свойства
