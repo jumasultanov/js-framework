@@ -259,7 +259,7 @@ class Component extends BaseComponent {
      * Удаляет дочерний компонент с удалением из DOM
      * @param {Component} component Удаляемый компонент
      * @param {Set|null} inserted Список уже вставленных компонентов
-     * @param {boolean} die Удалять ли данные
+     * @param {boolean} die Уничтожить компонент
      */
     removeChild(component, inserted = null, die = false) {
         delete this.children[component.name];
@@ -269,6 +269,16 @@ class Component extends BaseComponent {
         //Удаляем данные, если нужно, иначе выключаем
         if (die) Component.die(component);
         else Component.disable(component);
+    }
+
+    /**
+     * Удаляет все дочерние компоненты
+     * @param {Set} deleteList Список удаляемых компонентов
+     * @param {boolean} die Уничтожить компоненты
+     */
+    clearChildren(deleteList, die = false) {
+        for (let comp of deleteList) this.removeChild(comp, null, die);
+        deleteList.clear();
     }
 
     /**
