@@ -60,11 +60,12 @@ class Dependency {
 
     /**
      * Добавление наблюдателей для объекта или массива, чтобы следить за их изменением
-     * @param  {...function} callbacks 
+     * @param {...function} callbacks 
      */
     addObjectWatchers(...callbacks) {
-        this.add('$create', { method: callbacks[0] });
-        this.add('$delete', { method: callbacks[1] });
+        if (callbacks[0]) this.add('$create', { method: callbacks[0] });
+        if (callbacks[1]) this.add('$delete', { method: callbacks[1] });
+        if (callbacks[2]) this.add('$update', { method: callbacks[2] });
     }
 
     /**
@@ -112,11 +113,6 @@ class Dependency {
         }
         //Выполняем все функции
         if (prop in this.dependencies) {
-            //console.warn('CALL: '+prop, this.component?.path?.join(' -> '));
-            //console.log(params);
-            //console.log(this.dependencies[prop]);
-            // TODO: Проверять кол-во выполнении, чтобы не попадать в бесконечный цикл
-            //  
             Dependency.startCall();
             for (const id in this.dependencies[prop]) {
                 const watcher = this.dependencies[prop][id];
