@@ -242,7 +242,7 @@ class Basic {
         if (expr.startsWith('{')) {
             StrParser.match(expr, (key, valueExpr) => {
                 if (key.startsWith('"') || key.startsWith("'")) key = key.slice(1, -1);
-                this.setOne(vnode, data, vnode.getVars(), valueExpr, key);
+                this.setOne(data, vnode.getVars(), valueExpr, key);
             });
         } else {
             Executor.expr(data.expr, data, vnode.getVars(), false, () => {
@@ -254,14 +254,14 @@ class Basic {
                     //Устанавливаем наблюдателей при добавлении и удалении в объекте
                     data.current.getHandler().addObjectWatchers(changeParams => {
                         //Добавляем наблюдателя за свойством
-                        this.setOne(vnode, data, data.current, `this['${changeParams.prop}']`, changeParams.prop);
+                        this.setOne(data, data.current, `this['${changeParams.prop}']`, changeParams.prop);
                     }, changeParams => {
                         //Удаляем свойство и его наблюдателя
                         data.remove(changeParams.prop);
                         data.current.getHandler().removeProp(changeParams.prop);
                     });
                     //Устанавливаем свойства
-                    for (const name in data.current) this.setOne(vnode, data, data.current, `this['${name}']`, name);
+                    for (const name in data.current) this.setOne(data, data.current, `this['${name}']`, name);
                 }
             });
         }
@@ -269,25 +269,20 @@ class Basic {
 
     /**
      * Установка свойства на элемент
-     * @param {VNode} vnode 
      * @param {object} data 
      * @param {object} ctx Объект, откуда берутся свойства и значения
      * @param {string} expr Выражение, которое надо вычислять
      * @param {string} name Название свойства, которое будет меняться для элемента
-     * @param {boolean} started 
      */
-    static setOne(vnode, data, ctx, expr, name, started = false) {
+    static setOne(data, ctx, expr, name) {
         //Формируем объект для класса элемента
         const internalData = { expr };
         internalData.__proto__ = data;
         Executor.expr(internalData.expr, internalData, ctx, false, () => {
-            //Добавляем компонент, для хука обновления
-            if (started) Dependency.saveCaller(vnode.component);
             //Добавляем или удаляем класс или стиль в зависимости от значения
             if (internalData.current) data.add(name, internalData.current);
             else data.remove(name);
         });
-        started = true;
     }
 
 }
