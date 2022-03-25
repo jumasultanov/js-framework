@@ -272,6 +272,7 @@ class For {
      * @param {object} data Данные конструкции цикла
      * @param {Component} parentComp Родительский компонент
      * @param {string} namePrefix Префикс конструкции
+     * @param {boolean} isArray Является ли data.current массивом
      */
     static changeWatch(data, parentComp, namePrefix, isArray) {
         data.current.getHandler().addObjectWatchers(
