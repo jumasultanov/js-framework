@@ -10,7 +10,7 @@ let p = new Proxy({
         if (prop == '__proto__') return Reflect.set(target, prop, val, receiver);
         console.log(prop, target);
         if (target.hasOwnProperty([prop])) {
-            // TODO: 
+            // 
             return Reflect.set(target, prop, val, receiver);
         } else {
             return Reflect.set(target.__proto__, prop, val);
@@ -30,7 +30,7 @@ let x = new Proxy({
         if (prop == '__proto__') return Reflect.set(target, prop, val, receiver);
         console.log(prop, target);
         if (target.hasOwnProperty([prop])) {
-            // TODO: 
+            // 
             return Reflect.set(target, prop, val, receiver);
         } else {
             return Reflect.set(target.__proto__, prop, val);
