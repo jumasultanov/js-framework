@@ -291,7 +291,7 @@ class For {
                     this.arrayChange(data.current, changeParams.prop, this.ACTION_REPLACE);
                 } else {
                     const comp = parentComp.children[namePrefix + changeParams.prop];
-                    comp.vars[data.as[0]||'item'] = data.current[changeParams.prop];
+                    comp.vars[this.getItem(data)] = data.current[changeParams.prop];
                 }
             }
         );
@@ -384,7 +384,7 @@ class For {
         if (!comp) return;
         this.vnode.component.renameChild(comp, this.namePrefix + toKey);
         //Меняем индекс в данных компонента
-        comp.vars[this.data.as[1]||'key'] = String(toKey);
+        comp.vars[this.getKey(this.data)] = String(toKey);
     }
 
     /**
@@ -416,10 +416,10 @@ class For {
         //Актививуем его и вставляем
         this.vnode.component.insertChild(comp, space, this.vnode.data.inserted, append);
         //Добавляем наблюдателя за изменением значения "item"
-        comp.dependency.add(data.as[0]||'item', {
+        comp.dependency.add(this.getItem(data), {
             method: value => {
                 this.skipUpdate = true;
-                comp.vars[data.as[2]||'items'][comp.vars[data.as[1]||'key']] = value;
+                comp.vars[this.getItems(data)][comp.vars[this.getKey(data)]] = value;
                 this.skipUpdate = false;
             }
         });
@@ -458,8 +458,8 @@ class For {
                 if (replace) {
                     //Меняем компоненты
                     this.vnode.component.swapChild(replace, comp);
-                    replace.vars[this.data.as[1]||'key'] = String(i);
-                    comp.vars[this.data.as[1]||'key'] = String(replaceKey);
+                    replace.vars[this.getKey(this.data)] = String(i);
+                    comp.vars[this.getKey(this.data)] = String(replaceKey);
                 }
             }
         }
@@ -470,7 +470,7 @@ class For {
      */
     static componentSort() {
         const len = this.data.current.length;
-        const item = this.data.as[0]||'item';
+        const item = this.getItem(this.data);
         //Начинаем проверять в конца
         for (let i = len - 1; i >= 0; i--) {
             const comp = this.getComp(i);
@@ -484,8 +484,8 @@ class For {
                     //Если нашлось, то меняем местами компоненты и блоки
                     if (value === replace.vars[item]) {
                         this.vnode.component.swapChild(replace, comp, true);
-                        replace.vars[this.data.as[1]||'key'] = String(i);
-                        comp.vars[this.data.as[1]||'key'] = String(j);
+                        replace.vars[this.getKey(this.data)] = String(i);
+                        comp.vars[this.getKey(this.data)] = String(j);
                         break;
                     }
                 }
@@ -510,10 +510,37 @@ class For {
      */
     static getObjectForCycle(data, key) {
         const obj = {};
-        obj[data.as[0]||'item'] = data.current[key];
-        obj[data.as[1]||'key'] = key;
-        obj[data.as[2]||'items'] = data.current;
+        obj[this.getItem(data)] = data.current[key];
+        obj[this.getKey(data)] = key;
+        obj[this.getItems(data)] = data.current;
         return obj;
+    }
+
+    /**
+     * Возвращает название значения итерируемого элемента
+     * @param {object} data 
+     * @returns {string}
+     */
+    static getItem(data) {
+        return data.as[0]||'item';
+    }
+
+    /**
+     * Возвращает название ключа итерируемого элемента
+     * @param {object} data 
+     * @returns {string}
+     */
+    static getKey(data) {
+        return data.as[1]||'key';
+    }
+
+    /**
+     * Возвращает название перебираемого объекта
+     * @param {object} data 
+     * @returns {string}
+     */
+    static getItems(data) {
+        return data.as[2]||'items';
     }
 
 }
