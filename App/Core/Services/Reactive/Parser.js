@@ -95,16 +95,16 @@ class Parser {
             switch (data.type) {
                 //Атрибуты
                 case Parser.TYPE_ATTR:
-                    Directive.onName('basic', 'onParse', node, data.label, value, result);
+                    Directive.onName('basic', 'onParse', node, data.label, value, data.modes, result);
                     break;
                 //Конструкции
                 case Parser.TYPE_CONSTR:
-                    constr = { value, label: data.label };
+                    constr = { value, label: data.label, modes: data.modes };
                     rmv = [name];
                     break cycleAttrs;
                 //События
                 case Parser.TYPE_EVENT:
-                    Directive.onName('basic', 'onParseEvent', data.label, value, result);
+                    Directive.onName('basic', 'onParseEvent', data.label, value, data.modes, result);
                     break;
                 default:
                     continue;
@@ -118,7 +118,7 @@ class Parser {
         if (constr) {
             //Обновляем объект, т.к. конструкция не может иметь доп. функционала
             result = { constr: {} };
-            this.setConstructions(node, constr.label, constr.value, result);
+            this.setConstructions(node, constr.label, constr.value, constr.modes, result);
             //Указываем элемент замененного блока, откуда продолжится парсинг
             breakpoint = result.space;
         }
@@ -131,11 +131,12 @@ class Parser {
      * @param {Node} node Элемент
      * @param {string} attr Название атрибута
      * @param {string} value Значение атрибута
+     * @param {string[]|null} modes Режимы
      * @param {object} save Объект для хранения изменении
      */
-    setConstructions(node, construction, value, save) {
+    setConstructions(node, construction, value, modes, save) {
         //Формируем базовые данные для всех конструкции
-        save.constr[construction] = {};
+        save.constr[construction] = { modes };
         const obj = save.constr[construction];
         //Название компонента
         const componentName = `${ParserConfig.prefixCCName}:${this.getConstrCount()}`;
@@ -256,7 +257,13 @@ class Parser {
             type = this.TYPE_EVENT;
             index = ParserConfig.prefixEvent.length;
         }
-        return { type, label: attr.substring(index) };
+        let label = attr.substring(index);
+        let modes = null;
+        //Если есть режимы для конструкции
+        if (label.indexOf(ParserConfig.modesSym) > 0) {
+            [label, ...modes] = label.split(ParserConfig.modesSym);
+        }
+        return { type, label, modes  };
     }
     
 }

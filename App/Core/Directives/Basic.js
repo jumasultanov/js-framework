@@ -26,31 +26,44 @@ class Basic {
      * @param {Node} node Элемент
      * @param {string} attr Атрибут
      * @param {string} value Значение атрибута
+     * @param {string[]|null} modes Режимы
      * @param {object} data Данные конструкции
      */
-    static onParse(node, attr, value, data) {
+    static onParse(node, attr, value, modes, data) {
+        const obj = { expr: value, modes };
+        //Если указан список стилей
         if (attr == 'style') {
-            data.style = { expr: value };
+            data.style = obj;
             data.styleInserted = new Set();
-        } else if (attr == 'class') {
-            data.class = { expr: value };
+            return;
+        }
+        //Если указан список классов
+        if (attr == 'class') {
+            data.class = obj;
             data.classInserted = new Set();
-        } else if (attr in node) data.props[attr] = { expr: value };
-        else data.attrs[attr] = { expr: value };
+            return;
+        }
+        //Если указана связка значении value
+        if (attr == 'model') return data.model = obj;
+        //Если есть свойство Node элемента
+        if (attr in node) return data.props[attr] = obj;
+        //Иначе это атрибут элемента
+        data.attrs[attr] = obj;
     }
 
     /**
      * Событие при парсинге события
      * @param {string} attr Атрибут
      * @param {string} value Значение атрибута
+     * @param {string[]|null} modes Режимы
      * @param {object} data Данные конструкции
      */
-    static onParseEvent(attr, value, data) {
+    static onParseEvent(attr, value, modes, data) {
         value = value.trim();
         if (this.methodNameExpression.test(value)) {
             value += '(event)';
         }
-        data.on[attr] = { expr: value/*, mods: []*/ };
+        data.on[attr] = { expr: value, modes };
     }
 
     /**

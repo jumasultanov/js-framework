@@ -15,7 +15,9 @@ export const ParserConfig = {
     //Префикс для добавления события на элементе
     prefixEvent: '@',
     //Префикс для добавления атрибута на элементе
-    prefixAttr: ':'
+    prefixAttr: ':',
+    //Разделитель для указания режимов конструкции
+    modesSym: '.'
 }
 
 export const ConnectConfig = {
