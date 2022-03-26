@@ -415,6 +415,14 @@ class For {
         const comp = data.component.clone(this.namePrefix + key, true, this.getObjectForCycle(data, key));
         //Актививуем его и вставляем
         this.vnode.component.insertChild(comp, space, this.vnode.data.inserted, append);
+        //Добавляем наблюдателя за изменением значения "item"
+        comp.dependency.add(data.as[0]||'item', {
+            method: value => {
+                this.skipUpdate = true;
+                comp.vars[data.as[2]||'items'][comp.vars[data.as[1]||'key']] = value;
+                this.skipUpdate = false;
+            }
+        });
     }
 
     /**
