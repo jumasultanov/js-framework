@@ -14,6 +14,10 @@ class NodeElement {
         return this.node;
     }
 
+    is(...types) {
+        return types.includes(this.node.type);
+    }
+
     /**
      * Является ли элемент текстовым
      * @returns boolean
@@ -26,7 +30,12 @@ class NodeElement {
         this.node.textContent = text;
     }
 
+    isAttr(key) {
+        return this.node.hasAttribute(key);
+    }
+
     attr(key, value) {
+        if (value === undefined) return this.node.getAttribute(key);
         this.node.setAttribute(key, value);
     }
 
