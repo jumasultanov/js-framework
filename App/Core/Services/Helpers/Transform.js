@@ -15,11 +15,15 @@ class Transform {
      * @returns {string}
      */
     static text(value) {
-        if (typeof value != 'string' && typeof value != 'number') {
-            if (value) {
-                if (value instanceof Object) value = JSON.stringify(value);
-                else value = String(value);
-            } else value = '';
+        switch (typeof value) {
+            case 'number':
+                if (isNaN(value)) value = '';
+            case 'string': break;
+            default:
+                if (value) {
+                    if (value instanceof Object) value = JSON.stringify(value);
+                    else value = String(value);
+                } else value = '';
         }
         return value;
     }
