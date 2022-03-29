@@ -16,6 +16,8 @@ class Dependency {
 
     //Список зависимых полей и их функции
     dependencies = {};
+    //Список зависимых полей и их функции проверок значении
+    checkers = {};
     //Компонент или TRUE, если глобальный объект, или FALSE, если нет компонента
     component;
     //Список связанных ИД и свойств
@@ -89,6 +91,7 @@ class Dependency {
         const ids = Object.keys(this.dependencies[prop]);
         for (const id of ids) delete this.unions[id];
         delete this.dependencies[prop];
+        delete this.checkers[prop];
     }
 
     /**
@@ -132,6 +135,39 @@ class Dependency {
             }
             Dependency.endCall();
         }
+    }
+
+    /**
+     * Добавление метода, который проверяет присваиваемые значения
+     * @param {string} prop Свойство
+     * @param {function} watcher Проверяющий метод
+     * @returns 
+     */
+    addChecker(prop, watcher) {
+        if (!(prop in this.checkers)) this.checkers[prop] = {};
+        this.checkers[prop][Dependency.counter] = watcher;
+        this.unions[Dependency.counter] = prop;
+        return Dependency.counter++;
+    }
+
+    /**
+     * Вызывает методы, которые проверяют присваиваемые значения
+     * @param {string} prop Свойство
+     * @param {any} value Новое значение
+     * @param {any} oldValue Старое значение
+     * @returns {any}
+     */
+    callChecker(prop, value, oldValue) {
+        //Выполняем все функции
+        if (prop in this.checkers) {
+            for (const id in this.checkers[prop]) {
+                const checker = this.checkers[prop][id];
+                const result = checker(value, oldValue);
+                //Если метод вернул что-то кроме undefined, то возвращаем ее, иначе продолжаем выполняем оставшиеся
+                if (result !== undefined) return result;
+            }
+        }
+        return value;
     }
 
     /**

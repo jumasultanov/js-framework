@@ -78,6 +78,8 @@ class Executor {
         }
         //Получаем объект зависимости и записываем в нее функцию
         const inserted = dependency.add(this.$prop, watcher, caller);
+        //Добавляем проверщик значении свойств
+        if (data.checker) dependency.addChecker(this.$prop, data.checker);
         //После сохранения функции очищаем свойства, чтобы не мешало последующим сохранениям
         this.$dep = undefined;
         this.$prop = undefined;

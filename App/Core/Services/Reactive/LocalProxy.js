@@ -52,6 +52,8 @@ class LocalProxy {
         //Если изменилось настоящее свойство объекта, то проверку проходит
         if (target.hasOwnProperty(prop)) {
             const oldValue = target[prop];
+            //Перед изменением вызываем наблюдателей, которые проверяют значения
+            val = target.getHandler().callChecker(prop, val, oldValue);
             const result = Reflect.set(target, prop, val, receiver);
             //Выполняем все функции зависимости (слушатели прокси)
             if (result) {
