@@ -1,5 +1,6 @@
 import Directive from "../Directive.js";
 import { Executor, Dependency, StrParser, Transform } from "../Service.js";
+import Model from "./Model.js";
 
 class Basic {
 
@@ -44,7 +45,11 @@ class Basic {
             return;
         }
         //Если указана связка значении value
-        if (attr == 'model') return data.model = obj;
+        if (attr == Model.name) {
+            data.model = obj;
+            Model.modes(node, obj);
+            return;
+        }
         //Если есть свойство Node элемента
         if (attr in node) return data.props[attr] = obj;
         //Иначе это атрибут элемента
@@ -114,6 +119,7 @@ class Basic {
             this.setStyles(vnode);
             this.setClasses(vnode);
             this.setProperties(vnode);
+            Model.set(vnode);
         }
     }
 

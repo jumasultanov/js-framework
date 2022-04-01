@@ -41,6 +41,8 @@ class VNode {
     setDirectives() {
         if (this.isConstr) {
             Directive.onName(this.data.constrName, 'onExecute', this);
+            //Вызываем событие для элемента компонента при монтаже
+            this.node.getNode().dispatchEvent(new CustomEvent("updated", { detail: this }));
         } else {
             Directive.onName('basic', 'onExecute', this);
         }
@@ -68,6 +70,7 @@ class VNode {
             style: null, //Стили
             class: null, //Классы
             props: {}, //Свойства элемента
+            model: null, //Связка значении полей
         };
     }
 

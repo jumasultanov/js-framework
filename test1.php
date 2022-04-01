@@ -6,9 +6,9 @@
                     <div class="mb-5" m-block="description:TestController2">
                         <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Vel beatae officiis soluta magnam est esse reprehenderit, inventore quod, eum nulla nostrum rem possimus eius id odit obcaecati nihil ab. Vero quas repellat eveniet quidem sunt exercitationem, molestiae est, natus magnam quam, ratione quo perferendis voluptatum facere amet laudantium illum beatae?</p>
                         <button @click="click">Click {{ checked }}</button>
-                        <?/*
                         
                         <p m-if="counter < 103 || counter > 112" style="color:green">less 103 or more 110: <b>{{ counter }}</b></p>
+                        <?/*
                         <p m-else-if="counter < 106 || counter > 110" style="color:blue">less 106 or more 110: <b>{{ counter }}</b></p>
                         <p m-else style="color:red">more 105: <b>{{ counter }}</b></p>
 
@@ -25,22 +25,15 @@
                 </div>
                 <div class="col-5">
                     <button id="test-btn" @click="click">Custom event</button>
-                    <div m-for="nums">
-                        <div>
-                            <div>
-                                <span>
-                                    <i>{{ key }} -> {{ item }}</i>: 
-                                    <b :style="{color: 'rgb('+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+')'}">{{ Math.round(Math.random()*1000) }}</b>
-                                </span>
-                                <div style="position:absolute">
-                                    <div>
-                                        <div><a href=""><span><span><span><i><b>.</b></i></span></span></span></a></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <?/*<div m-for="nums" style="margin-top:10px">
+                        <span>
+                            <i style="display:inline-block;width:100px">{{ key }} -> {{ item }}</i>: 
+                            <b style="display:inline-block;width:35px" :style="{color: 'rgb('+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+','+Math.round(Math.random()*255)+')'}">{{ Math.round(Math.random()*1000) }}</b>
+                            <input class="form-control" type="number" min="-10" :max="maxAll" :model.number="item" :style="{ display: 'inline-block', width: (100+(+item))+'px', 'background-color': 'rgb('+Math.round(Math.random()*100+155)+','+Math.round(Math.random()*100+155)+','+Math.round(Math.random()*100+155)+')' }">
+                        </span>
                     </div>
                     <p m-for-else :style="warning">Empty</p>
+                    */?>
                     <br>
                     <form class="mt-5">
                         <div class="form-group mb-3">
@@ -48,14 +41,34 @@
                                 :style="styles"
                                 :class='classes'
                             >Email address</label>
-                            <input type="email" class="form-control" placeholder="Enter email">
+                            <input type="email" class="form-control" placeholder="Enter email" :model="email">
                         </div>
                         <div class="form-group mb-3">
                             <label for="exampleInputPassword1">Password</label>
-                            <input type="password" class="form-control" placeholder="Password">
+                            <input type="password" class="form-control" placeholder="Password" :model="password">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Text</label>
+                            <textarea class="form-control" minlength="10" maxlength="80" :model="textarea"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Text</label>
+                            <select class="form-select" multiple :model.number="select" style="min-height:150px">
+                                <option m-for="options" :value="item.id">{{ item.name }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Radio: {{ radio }}</label>
+                            <input class="form-check-input" type="radio" value="1" :model.number="radio">
+                            <input class="form-check-input" type="radio" value="2" :model.number="radio">
                         </div>
                         <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="exampleCheck1" :checked="checked">
+                            <input 
+                                type="checkbox" 
+                                class="form-check-input" 
+                                id="exampleCheck1" 
+                                :model="checked"
+                            >
                             <label class="form-check-label" for="exampleCheck1">Check me out</label>
                         </div>
                         <button type="submit" class="btn btn-primary">Submit</button>
