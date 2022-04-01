@@ -53,8 +53,9 @@ class Executor {
             //Трансформируем изменения, если нужно
             if (data.transform) val = data.transform(val);
             //Если изменилось или грубо нужно обновить, изменяем значение и вызываем колбэк
-            if (!('current' in data) || params?.force || data.current !== val) {
+            if (!('current' in data) || data.onceForce || params?.force || data.current !== val) {
                 data.current = val;
+                if (data.onceForce) data.onceForce = false;
                 if (callback) callback(params);
             }
         }

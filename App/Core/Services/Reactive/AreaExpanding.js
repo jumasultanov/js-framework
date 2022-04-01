@@ -77,12 +77,14 @@ class AreaExpanding {
     }
     
     /**
-     * Добавление скрытого свойства для объекта, указывающий, что объект перебирается
+     * Добавление скрытого свойства для объекта
      * @param {object} target 
+     * @param {string} key 
+     * @param {any} value 
      */
-    static setIterating(target) {
-        Object.defineProperty(target.__proto__, 'iterating',
-            Helper.getDescriptor(true, true, true, false)
+    static set(target, key, value) {
+        Object.defineProperty(target.__proto__, key,
+            Helper.getDescriptor(value, true, true, false)
         );
     }
 

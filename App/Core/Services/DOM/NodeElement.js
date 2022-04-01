@@ -14,6 +14,10 @@ class NodeElement {
         return this.node;
     }
 
+    get(selector) {
+        return this.node.querySelectorAll(selector);
+    }
+
     is(...types) {
         return types.includes(this.node.type);
     }
@@ -40,6 +44,7 @@ class NodeElement {
     }
 
     prop(key, value) {
+        if (value === undefined) return this.node[key];
         this.node[key] = value;
     }
 
