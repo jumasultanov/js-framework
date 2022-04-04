@@ -56,7 +56,10 @@ class Executor {
             if (!('current' in data) || data.onceForce || params?.force || data.current !== val) {
                 data.current = val;
                 if (data.onceForce) data.onceForce = false;
-                if (callback) callback(params);
+                if (callback) {
+                    if (!data.onceIgnore) callback(params);
+                    else data.onceIgnore = false;
+                }
             }
         }
         //Первый запуск функции
