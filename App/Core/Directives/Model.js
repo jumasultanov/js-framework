@@ -129,30 +129,28 @@ class Model {
     }
 
     static selectMultiple(vnode) {
+        // TODO: Постоянный перебор при изменении для большого кол-ва элементов
+        //          может долго выполняться, надо будет изменить, если это необходимо
         const data = vnode.data.model;
         data.handler = event => {
+            //Перебираем элементы и находим активные
             const values = [];
             for (const option of event.target.selectedOptions) {
                 let value = option.value;
                 if (data.numeric) value = parseFloat(value);
                 values.push(value);
             }
-            console.log('CHANGE', values);
+            data.ignore = true;
+            //Заменяем предыдущие элементы на активные
             data.current.splice(0, data.current.length, ...values);
         }
-        // TODO: Методы перехвата измении массива нужно вывести в отдельный класс,
-        //          т.к они могут быть использованы не только для FOR
         data.innerMounted = params => {
-            if (data.current instanceof Object) {
-                //console.log('INPUT', data.current);
-                console.log(params);
+            if (data.current instanceof Object && !data.ignore) {
                 if (params?.collect) {
                     //Наблюдение за изменениями в объекте
                     ObjectControl.setRroto(data.current, vnode.component.path, data.expr, '$modelSelect');
-                } else if (params && 'change' in params) {
-                    //TODO: array change
                 } else {
-                    console.warn('options update');
+                    //Перебираем элементы и изменяем статус активного
                     for (const option of vnode.node.getNode().options) {
                         let value = option.value;
                         if (data.numeric) value = parseFloat(value);
@@ -161,6 +159,7 @@ class Model {
                     }
                 }
             }
+            data.ignore = false;
         }
         return data.innerMounted;
     }
