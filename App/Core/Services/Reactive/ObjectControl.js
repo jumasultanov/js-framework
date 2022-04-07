@@ -1,5 +1,5 @@
 import Area from "../../Area.js";
-import { AreaExpanding, Helper } from "../../Service.js";
+import { AreaExpanding, Dependency, Helper } from "../../Service.js";
 
 class ObjectControl {
 
@@ -34,6 +34,7 @@ class ObjectControl {
                     while (len--) args[len] = arguments[len];
                     //Пропускаем обновления
                     ObjectControl.skipUpdate = true;
+                    ObjectControl.beforeArrayChange(this);
                     //Вызываем оригинальный метод
                     let result = original.apply(this, args);
                     ObjectControl.skipUpdate = false;
@@ -189,6 +190,16 @@ class ObjectControl {
             force: true,
             change, index
         });
+    }
+
+    /**
+     * Действия перед изменением массива
+     * @param {object} target Целевой объект
+     */
+    static beforeArrayChange(target) {
+        const root = target.getWatcher();
+        //Реализация хуков для компонентов
+        Dependency.startChange(root.vars.getHandler().component);
     }
 
 }
