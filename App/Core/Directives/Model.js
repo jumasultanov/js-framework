@@ -74,17 +74,15 @@ class Model {
      */
      static set(vnode) {
         if (vnode.data.model) {
-            // TODO: нужно решить с моментов других вариантов полей
             const data = vnode.data.model;
             let watcher = null;
             data.method = 'change';
-            //Для чекбокса свои методы
+            //Для каждого типа полей свои методы
             if (vnode.node.is('checkbox')) {
                 watcher = this.checkbox(vnode);
             } else if (vnode.node.is('radio')) {
                 watcher = this.radio(vnode);
             } else if (vnode.node.is('select-multiple')) {
-                // TODO: сделать checkbox формировать значения в массив, если целевой объект массив
                 watcher = this.selectMultiple(vnode);
             } else {
                 watcher = this.text(vnode);
@@ -95,41 +93,76 @@ class Model {
         }
     }
 
+    /**
+     * Поле checkbox
+     *      - model: boolean|string|number|string[]|number[]
+     *      - варианты использования: 
+     *          атрибуты: true-value - значение указывается при checked==true | false-value - при checked==false
+     *          boolean - значение напрямую связан с checked
+     *          string[]|number[] - значения добавляются в массив из атрибута value
+     * @param {VNode} vnode 
+     * @returns {function}
+     */
     static checkbox(vnode) {
-        // TODO: Сделать вариант с массивом значении, а value -> это добавляемое значение
         const data = vnode.data.model;
         data.handler = event => {
-            let value = event.target.checked;
-            if (value && event.target.hasAttribute('true-value')) value = event.target.getAttribute('true-value');
-            else if (!value && event.target.hasAttribute('false-value')) value = event.target.getAttribute('false-value');
-            data.onceIgnore = true;
-            vnode.getVars()[data.expr] = value;
+            if (Array.isArray(data.current)) {
+                //Получаем флаг, значение и позиция в массиве
+                let checked = event.target.checked;
+                let value = this.getValue(vnode);
+                let index = data.current.indexOf(value);
+                data.onceIgnore = true;
+                //Добавляем, если нет в массиве, и удаляем, если есть относительно checked
+                if (checked && index === -1) data.current.push(value);
+                else if (!checked && index > -1) data.current.splice(index, 1);
+            } else {
+                let value = event.target.checked;
+                //Получаем значения, если указаны атрибуты или хотя один атрибут относительно checked
+                if (value && event.target.hasAttribute('true-value')) value = event.target.getAttribute('true-value');
+                else if (!value && event.target.hasAttribute('false-value')) value = event.target.getAttribute('false-value');
+                data.onceIgnore = true;
+                vnode.getVars()[data.expr] = value;
+            }
         }
         return () => {
+            // TODO: возможно потребуется переделать, т.к. при каждом обновлении массива, он перебирается для каждого model
             let checked = false;
-            if (vnode.node.isAttr('true-value')) {
-                let value = vnode.node.attr('true-value');
-                if (data.numeric) value = parseFloat(value);
-                if (data.current === value) checked = true;
+            if (Array.isArray(data.current)) {
+                //Проверка на наличие в массиве
+                checked = data.current.includes(this.getValue(vnode));
             } else {
-                if (data.current === true) checked = true;
+                if (vnode.node.isAttr('true-value')) {
+                    if (data.current === this.getValue(vnode, 'true-value')) checked = true;
+                } else {
+                    if (data.current === true) checked = true;
+                }
             }
             vnode.node.prop('checked', checked);
         }
     }
 
+    /**
+     * Поле radio
+     *      - model: string|number
+     * @param {VNode} vnode 
+     * @returns {function}
+     */
     static radio(vnode) {
         const data = vnode.data.model;
         data.handler = event => {
             vnode.getVars()[data.expr] = event.target.value;
         }
         return () => {
-            let value = vnode.node.prop('value');
-            if (data.numeric) value = parseFloat(value);
-            vnode.node.prop('checked', value === data.current);
+            vnode.node.prop('checked', this.getValue(vnode) === data.current);
         }
     }
 
+    /**
+     * Поле select[multiple]
+     *      - model: string[]|number[]
+     * @param {VNode} vnode 
+     * @returns {function}
+     */
     static selectMultiple(vnode) {
         // TODO: Постоянный перебор при изменении для большого кол-ва элементов
         //          может долго выполняться, надо будет изменить, если это необходимо
@@ -138,9 +171,7 @@ class Model {
             //Перебираем элементы и находим активные
             const values = [];
             for (const option of event.target.selectedOptions) {
-                let value = option.value;
-                if (data.numeric) value = parseFloat(value);
-                values.push(value);
+                values.push(this.getValue(vnode, false, option.value));
             }
             data.onceIgnore = true;
             //Заменяем предыдущие элементы на активные
@@ -154,9 +185,11 @@ class Model {
                 } else {
                     //Перебираем элементы и изменяем статус активного
                     for (const option of vnode.node.getNode().options) {
-                        let value = option.value;
-                        if (data.numeric) value = parseFloat(value);
-                        if (data.current.includes(value)) option.selected = true;
+                        if (
+                            data.current.includes(
+                                this.getValue(vnode, false, option.value)
+                            )
+                        ) option.selected = true;
                         else option.selected = false;
                     }
                 }
@@ -165,6 +198,11 @@ class Model {
         return data.innerMounted;
     }
 
+    /**
+     * Остальные поля
+     * @param {VNode} vnode 
+     * @returns {function}
+     */
     static text(vnode) {
         const data = vnode.data.model;
         data.method = 'input';
@@ -176,6 +214,22 @@ class Model {
         return () => {
             vnode.node.prop('value', data.current);
         }
+    }
+
+    /**
+     * Трансформирует, если нужно и возвращает значение
+     * @param {VNode} vnode
+     * @param {string} attr Название атрибута со значением
+     * @returns 
+     */
+    static getValue(vnode, attr = false, value = undefined) {
+        const data = vnode.data.model;
+        if (value === undefined) {
+            if (attr) value = vnode.node.attr(attr);
+            else value = vnode.node.prop('value');
+        }
+        if (data.numeric) value = parseFloat(value);
+        return value;
     }
 
 }

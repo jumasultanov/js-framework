@@ -66,6 +66,13 @@
                             <input class="form-check-input" type="radio" value="1" :model.number="radio">
                             <input class="form-check-input" type="radio" value="2" :model.number="radio">
                         </div>
+                        <div class="form-group mb-3">
+                            <label>Check: <span m-for="users">{{ item }}, </span></label><br>
+                            <div m-for="options">
+                                <input type="checkbox" :value="item.id" :model.number="users">
+                                <span>: {{ item.name }}</span>
+                            </div>
+                        </div>
                         <div class="form-check mb-3">
                             <input 
                                 type="checkbox" 
