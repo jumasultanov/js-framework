@@ -48,11 +48,15 @@
                             <input type="password" class="form-control" placeholder="Password" :model="password">
                         </div>
                         <div class="form-group mb-3">
+                            <label>Age</label>
+                            <input type="number" class="form-control" :model="age">
+                        </div>
+                        <div class="form-group mb-3">
                             <label>Text</label>
                             <textarea class="form-control" minlength="10" maxlength="80" :model="textarea"></textarea>
                         </div>
                         <div class="form-group mb-3">
-                            <label>Text</label>
+                            <label>Select</label>
                             <select class="form-select" multiple :model.number="select" style="min-height:150px">
                                 <option m-for="options" :value="item.id">{{ item.name }}</option>
                             </select>

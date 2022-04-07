@@ -35,7 +35,7 @@ class Model {
             }
         }
         //Указываем метод проверки числовых значении
-        if (number || node.is('range')) {
+        if (number || node.is('number', 'range')) {
             data.numeric = true;
             data.checker = value => {
                 //Проверка на ограничения в диапазоне
@@ -96,11 +96,13 @@ class Model {
     }
 
     static checkbox(vnode) {
+        // TODO: Сделать вариант с массивом значении, а value -> это добавляемое значение
         const data = vnode.data.model;
         data.handler = event => {
             let value = event.target.checked;
             if (value && event.target.hasAttribute('true-value')) value = event.target.getAttribute('true-value');
             else if (!value && event.target.hasAttribute('false-value')) value = event.target.getAttribute('false-value');
+            data.onceIgnore = true;
             vnode.getVars()[data.expr] = value;
         }
         return () => {
@@ -140,12 +142,12 @@ class Model {
                 if (data.numeric) value = parseFloat(value);
                 values.push(value);
             }
-            data.ignore = true;
+            data.onceIgnore = true;
             //Заменяем предыдущие элементы на активные
             data.current.splice(0, data.current.length, ...values);
         }
         data.innerMounted = params => {
-            if (data.current instanceof Object && !data.ignore) {
+            if (data.current instanceof Object) {
                 if (params?.collect) {
                     //Наблюдение за изменениями в объекте
                     ObjectControl.setRroto(data.current, vnode.component.path, data.expr, '$modelSelect');
@@ -159,7 +161,6 @@ class Model {
                     }
                 }
             }
-            data.ignore = false;
         }
         return data.innerMounted;
     }
@@ -168,18 +169,11 @@ class Model {
         const data = vnode.data.model;
         data.method = 'input';
         data.handler = event => {
-            let value = event.target.value;
-            if (data.numeric) {
-                //Случается, когда числовой тип и ставится "-"
-                if (!value && event.data) return;
-                if (event.data == '.') return;
-            }
+            data.onceIgnore = true;
             // TODO: не сработает момент, если указали свойство вложенного объекта
-            vnode.getVars()[data.expr] = value;
+            vnode.getVars()[data.expr] = event.target.value;
         }
         return () => {
-            //Если числовой и NaN, то игнорируем изменение, нужно, если ставят точку или тире
-            if (data.numeric && isNaN(data.current)) return;
             vnode.node.prop('value', data.current);
         }
     }
