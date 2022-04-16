@@ -53,11 +53,11 @@
                         </div>
                         <div class="form-group mb-3">
                             <label>Text</label>
-                            <textarea class="form-control" minlength="10" maxlength="80" :model="textarea"></textarea>
+                            <textarea class="form-control" minlength="1" maxlength="80" :model="options[0].text"></textarea>
                         </div>
                         <div class="form-group mb-3">
                             <label>Select</label>
-                            <select class="form-select" multiple :model.number="select" style="min-height:150px">
+                            <select class="form-select" multiple :model.number="select" style="min-height: 175px">
                                 <option m-for="options" :value="item.id">{{ item.name }}</option>
                             </select>
                         </div>

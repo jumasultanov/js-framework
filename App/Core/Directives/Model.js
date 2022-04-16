@@ -19,7 +19,7 @@ class Model {
             }
         }
         //Если есть может быть внутренняя конструкция цикла
-        if (node.is('select-multiple')) {
+        if (node.is('select-one', 'select-multiple')) {
             for (const el of node.get(`option`)) {
                 let constr = false;
                 for (const attr of el.getAttributeNames()) {
@@ -29,6 +29,7 @@ class Model {
                     }
                 }
                 if (!constr) continue;
+                //Ставим событие на элемент, если внутренняя конструкция инициализировалась
                 el.addEventListener('updated', () => {
                     data?.innerMounted();
                 })
@@ -87,8 +88,15 @@ class Model {
             } else {
                 watcher = this.text(vnode);
             }
+            data.vars = vnode.getVars();
             //data.expr содержит только название свойства, выражения не поддерживаются
-            Executor.expr(data.expr, data, vnode.getVars(), false, watcher);
+            let found = Executor.search(data.expr, vnode.getVars());
+            if (found === false) return;
+            if (found !== true) {
+                data.expr = found.prop;
+                data.vars = found.target;
+            }
+            Executor.expr(data.expr, data, data.vars, false, watcher);
             vnode.node.getNode().addEventListener(data.method, data.handler);
         }
     }
@@ -121,11 +129,13 @@ class Model {
                 if (value && event.target.hasAttribute('true-value')) value = event.target.getAttribute('true-value');
                 else if (!value && event.target.hasAttribute('false-value')) value = event.target.getAttribute('false-value');
                 data.onceIgnore = true;
-                vnode.getVars()[data.expr] = value;
+                data.vars[data.expr] = value;
             }
         }
         return () => {
             // TODO: возможно потребуется переделать, т.к. при каждом обновлении массива, он перебирается для каждого model
+            // TODO: не самое эффективное решение, 
+            //       т.к. для каждого чекбокса свой vnode и при изменении списка выбранных срабатывают все (спрведливо для групп чекбоксов)
             let checked = false;
             if (Array.isArray(data.current)) {
                 //Проверка на наличие в массиве
@@ -150,7 +160,7 @@ class Model {
     static radio(vnode) {
         const data = vnode.data.model;
         data.handler = event => {
-            vnode.getVars()[data.expr] = event.target.value;
+            data.vars[data.expr] = event.target.value;
         }
         return () => {
             vnode.node.prop('checked', this.getValue(vnode) === data.current);
@@ -181,6 +191,7 @@ class Model {
             if (data.current instanceof Object) {
                 if (params?.collect) {
                     //Наблюдение за изменениями в объекте
+                    // TODO: не работает, если указали вложенный объект выбранных
                     ObjectControl.setRroto(data.current, vnode.component.path, data.expr, '$modelSelect');
                 } else {
                     //Перебираем элементы и изменяем статус активного
@@ -208,12 +219,12 @@ class Model {
         data.method = 'input';
         data.handler = event => {
             data.onceIgnore = true;
-            // TODO: не сработает момент, если указали свойство вложенного объекта
-            vnode.getVars()[data.expr] = event.target.value;
+            data.vars[data.expr] = event.target.value;
         }
-        return () => {
+        data.innerMounted = () => {
             vnode.node.prop('value', data.current);
         }
+        return data.innerMounted;
     }
 
     /**

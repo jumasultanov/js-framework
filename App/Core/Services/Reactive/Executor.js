@@ -25,6 +25,27 @@ class Executor {
     }
 
     /**
+     * Возвращает объект и его свойство, если в путь состоит из вложенных объектов
+     * @param {string} path 
+     * @param {object} ctx 
+     * @returns {object|false|true} false - Если некорректный путь, true - Если нет вложенности
+     */
+    static search(path, ctx) {
+        let prop;
+        for (let i = path.length; i > 0; i--) {
+            if (path[i] == '.' || path[i] == '[') {
+                prop = path.slice(i+1, path[i] == '[' ? -1 : undefined);
+                path = path.slice(0, i);
+                break;
+            }
+        }
+        if (!prop) return true;
+        const target = this.call(path, ctx);
+        if (!(target instanceof Object)) return false;
+        return { target, prop };
+    }
+
+    /**
      * Инициализация выражения в Dependency
      * @param {string} expr Выражение
      * @param {object} data Данные выражения
