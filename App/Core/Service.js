@@ -18,6 +18,8 @@ export { default as VDOM } from './Services/Reactive/VDOM.js'
 export { default as VNode } from './Services/Reactive/VNode.js'
 //Request
 export { default as Request } from './Services/Request/Request.js'
+//Server
+export { default as Server } from './Services/Server/Server.js'
 //Log
 export { default as Log } from './Services/Log/Log.js'
 
