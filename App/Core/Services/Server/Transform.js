@@ -1,7 +1,7 @@
 class Transform {
     
     /**
-     * 
+     * Преобразование и добавление данных в объект URL
      * @param {any} data 
      * @param {URL} url 
      */
@@ -11,8 +11,9 @@ class Transform {
     }
 
     /**
-     * 
+     * Преобразование и добавление данных в объект FormData
      * @param {any} data 
+     * @param {FormData} formData 
      * @returns {any}
      */
     static asBody(data, formData = new FormData()) {
@@ -21,10 +22,10 @@ class Transform {
     }
 
     /**
-     * 
-     * @param {object} data 
-     * @param {URLSearchParams|FormData} collection
-     * @param {string} prefix
+     * Преобразование данных в объект "collection"
+     * @param {object} data Данные
+     * @param {URLSearchParams|FormData} collection Контейнер
+     * @param {string} prefix Префикс для названии ключей
      */
     static collect(data, collection, prefix = null) {
         if (
